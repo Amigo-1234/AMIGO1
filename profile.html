@@ -98,6 +98,34 @@
                     </div>
                 </div>
 
+   <!-- Edit Profile Modal -->
+    <div id="edit-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-8 w-full max-w-md">
+            <h2 class="text-2xl font-bold mb-6">Edit Profile</h2>
+            <form id="edit-profile-form">
+                <div class="flex flex-col items-center mb-6">
+                    <img id="modal-pfp-preview" src="https://i.pravatar.cc/300?u=a042581f4e29026704d" class="h-24 w-24 rounded-full object-cover mb-4">
+                    <label for="pfp-upload" class="cursor-pointer text-indigo-600 dark:text-indigo-400 hover:underline">
+                        Change Profile Photo
+                        <input type="file" id="pfp-upload" class="hidden" accept="image/*">
+                    </label>
+                </div>
+                <div class="mb-4">
+                    <label for="edit-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Name</label>
+                    <input type="text" id="edit-name" class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div class="mb-6">
+                    <label for="edit-bio" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Bio</label>
+                    <textarea id="edit-bio" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                </div>
+                <div class="flex justify-end space-x-4">
+                    <button type="button" id="cancel-edit-btn" class="px-6 py-2 bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 font-semibold rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500">Cancel</button>
+                    <button type="submit" class="px-6 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
 <div id="user-posts" class="mt-6 space-y-4">
   <!-- Posts will appear here -->
 </div>
@@ -156,6 +184,51 @@
 
   let currentUser = null;
   let newProfilePicFile = null;
+   
+  editProfileBtn.addEventListener("click", () => {
+  editModal.classList.remove("hidden");
+  modalPfpPreview.src = profilePic.src;
+  editName.value = profileName.textContent;
+  editBio.value = profileBio.textContent;
+});
+
+cancelEditBtn.addEventListener("click", () => {
+  editModal.classList.add("hidden");
+});
+
+pfpUpload.addEventListener("change", (e) => {
+  newProfilePicFile = e.target.files[0];
+  if (newProfilePicFile) {
+    modalPfpPreview.src = URL.createObjectURL(newProfilePicFile);
+  }
+});
+
+editProfileForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const name = editName.value.trim();
+  const bio = editBio.value.trim();
+  const updates = { name, bio };
+
+  if (newProfilePicFile) {
+    const storageRef = ref(storage, `profilePics/${currentUser.uid}`);
+    await uploadBytes(storageRef, newProfilePicFile);
+    const url = await getDownloadURL(storageRef);
+    updates.profilePic = url;
+  }
+
+  const userDoc = doc(db, "users", currentUser.uid);
+  await updateDoc(userDoc, updates);
+
+  profileName.textContent = updates.name;
+  profileBio.textContent = updates.bio;
+  if (updates.profilePic) {
+    profilePic.src = updates.profilePic;
+  }
+
+  editModal.classList.add("hidden");
+});
+
 
   onAuthStateChanged(auth, async (user) => {
     if (!user) {
