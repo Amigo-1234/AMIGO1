@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Friend Profile</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 p-4">
+  <a href="/friends.html" class="text-indigo-500 hover:underline mb-4 block">&larr; Back</a>
+
+  <div class="max-w-md mx-auto bg-white dark:bg-gray-800 rounded-xl shadow p-6 text-center">
+    <img id="profilePic" class="w-32 h-32 rounded-full mx-auto mb-4 object-cover" src="" alt="Profile Pic">
+    <h2 id="profileName" class="text-2xl font-bold"></h2>
+    <p id="profileBio" class="text-gray-500 mt-2"></p>
+    <p id="onlineStatus" class="mt-2 font-semibold"></p>
+
+    <div class="mt-4">
+      <p><strong>Followers:</strong> <span id="followersCount">0</span></p>
+      <p><strong>Following:</strong> <span id="followingCount">0</span></p>
+      <button id="followBtn" class="mt-3 px-4 py-2 bg-indigo-500 text-white rounded">Follow</button>
+    </div>
+  </div>
+
+  <div class="max-w-md mx-auto mt-6" id="user-posts"></div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import {
+      getFirestore, doc, getDoc, updateDoc, addDoc,
+      collection, query, where, onSnapshot, orderBy, serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCh4rG-JBamK1YVjZIKy49BL7sO_cUzuog",
+      authDomain: "idr-488b2.firebaseapp.com",
+      projectId: "idr-488b2",
+      storageBucket: "idr-488b2.appspot.com",
+      messagingSenderId: "220979507758",
+      appId: "1:220979507758:web:d2860ac10cfb58ad5725bf"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const userId = urlParams.get("id");
+
+    const profileName = document.getElementById("profileName");
+    const profilePic = document.getElementById("profilePic");
+    const profileBio = document.getElementById("profileBio");
+    const onlineStatus = document.getElementById("onlineStatus");
+    const followersCount = document.getElementById("followersCount");
+    const followingCount = document.getElementById("followingCount");
+    const followBtn = document.getElementById("followBtn");
+    const postContainer = document.getElementById("user-posts");
+
+    let currentUser = null;
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        window.location.href = "/index.html";
+        return;
+      }
+
+      currentUser = user;
+      loadProfile();
+      loadPosts();
+    });
+
+    async function loadProfile() {
+      const docRef = doc(db, "users", userId);
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        profileName.textContent = data.name || "No Name";
+        profilePic.src = data.profilePic || `https://i.pravatar.cc/300?u=${userId}`;
+        profileBio.textContent = data.bio || "No bio";
+        onlineStatus.textContent = data.isOnline ? "🟢 Online" : "⚫️ Offline";
+        followersCount.textContent = data.followers?.length || 0;
+        followingCount.textContent = data.following?.length || 0;
+
+        if (userId === currentUser.uid) {
+          followBtn.style.display = "none";
+        } else {
+          const currentUserDoc = await getDoc(doc(db, "users", currentUser.uid));
+          const currentData = currentUserDoc.data();
+          const isFollowing = currentData.following?.includes(userId);
+          followBtn.textContent = isFollowing ? "Unfollow" : "Follow";
+
+          followBtn.onclick = async () => {
+            const targetRef = doc(db, "users", userId);
+            const currentRef = doc(db, "users", currentUser.uid);
+            const targetData = (await getDoc(targetRef)).data();
+            const myData = (await getDoc(currentRef)).data();
+
+            if (myData.following?.includes(userId)) {
+              await updateDoc(currentRef, {
+                following: myData.following.filter(id => id !== userId)
+              });
+              await updateDoc(targetRef, {
+                followers: targetData.followers.filter(id => id !== currentUser.uid)
+              });
+              followBtn.textContent = "Follow";
+            } else {
+              await updateDoc(currentRef, {
+                following: [...(myData.following || []), userId]
+              });
+              await updateDoc(targetRef, {
+                followers: [...(targetData.followers || []), currentUser.uid]
+              });
+              followBtn.textContent = "Unfollow";
+            }
+
+            loadProfile();
+          };
+        }
+      } else {
+        profileName.textContent = "User not found";
+      }
+    }
+
+    function loadPosts() {
+      const postsQuery = query(
+        collection(db, "posts"),
+        where("userId", "==", userId),
+        orderBy("timestamp", "desc")
+      );
+
+      onSnapshot(postsQuery, (snapshot) => {
+        postContainer.innerHTML = "";
+        snapshot.forEach((docSnap) => {
+          const post = docSnap.data();
+          const postId = docSnap.id;
+
+          const div = document.createElement("div");
+          div.className = "bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-4";
+          div.innerHTML = `
+            <div class="flex items-center gap-3 mb-2">
+              <img src="${post.profilePic}" class="w-10 h-10 rounded-full" />
+              <div>
+                <p class="font-semibold">${post.name}</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400">${new Date(post.timestamp?.toDate()).toLocaleString()}</p>
+              </div>
+            </div>
+            <p class="mt-2 text-gray-700 dark:text-gray-300">${post.text}</p>
+            ${post.imageUrl ? `<img src="${post.imageUrl}" class="mt-3 rounded-lg w-full max-h-72 object-cover" />` : ""}
+
+
+            <div class="mt-3 flex items-center gap-4">
+              <button class="like-btn" data-id="${postId}">
+                ❤️ <span class="like-count">${post.likes?.length || 0}</span>
+              </button>
+              <button class="comment-toggle-btn" data-id="${postId}">💬 Comments</button>
+            </div>
+
+            <div class="comments-section mt-3 hidden" data-id="${postId}">
+              <div class="comments-list space-y-2"></div>
+              <input type="text" placeholder="Add a comment..." class="comment-input mt-2 p-2 border rounded w-full" />
+              <button class="submit-comment mt-1 bg-blue-500 text-white px-3 py-1 rounded">Post</button>
+            </div>
+          `;
+
+          // Like
+          div.querySelector(".like-btn").addEventListener("click", async () => {
+            const postRef = doc(db, "posts", postId);
+            const postSnap = await getDoc(postRef);
+            const postData = postSnap.data();
+            const likes = postData.likes || [];
+            const userId = currentUser.uid;
+
+            if (likes.includes(userId)) {
+              await updateDoc(postRef, { likes: likes.filter(id => id !== userId) });
+            } else {
+              await updateDoc(postRef, { likes: [...likes, userId] });
+            }
+          });
+
+          // Toggle comment
+          div.querySelector(".comment-toggle-btn").addEventListener("click", () => {
+            const section = div.querySelector(`.comments-section[data-id="${postId}"]`);
+            section.classList.toggle("hidden");
+          });
+
+          // Submit comment
+          div.querySelector(".submit-comment").addEventListener("click", async () => {
+            const section = div.querySelector(`.comments-section[data-id="${postId}"]`);
+            const input = section.querySelector(".comment-input");
+            const commentText = input.value.trim();
+            if (!commentText) return;
+
+            const userSnap = await getDoc(doc(db, "users", currentUser.uid));
+            const userData = userSnap.data();
+
+            await addDoc(collection(db, "posts", postId, "comments"), {
+              text: commentText,
+              name: userData.name,
+              profilePic: userData.profilePic,
+              timestamp: serverTimestamp()
+            });
+
+            input.value = "";
+          });
+
+          // Real-time comments
+          const commentsRef = collection(db, "posts", postId, "comments");
+          const commentsQuery = query(commentsRef, orderBy("timestamp", "asc"));
+          const commentsList = div.querySelector(".comments-list");
+
+          onSnapshot(commentsQuery, (commentSnap) => {
+            commentsList.innerHTML = "";
+            commentSnap.forEach((cDoc) => {
+              const c = cDoc.data();
+              commentsList.innerHTML += `
+                <div class="bg-gray-100 dark:bg-gray-700 p-2 rounded">
+                  <div class="flex items-center gap-2">
+                    <img src="${c.profilePic}" class="w-6 h-6 rounded-full" />
+                    <p class="text-sm font-semibold">${c.name}</p>
+                  </div>
+                  <p class="text-sm mt-1">${c.text}</p>
+                </div>
+              `;
+            });
+          });
+
+          postContainer.appendChild(div);
+        });
+      });
+    }
+  </script>
+</body>
+</html>

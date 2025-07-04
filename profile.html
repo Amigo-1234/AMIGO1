@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en" class="">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AMIGO - Profile</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Inter', 'sans-serif'],
+                        'pacifico': ['Pacifico', 'cursive'],
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 font-sans transition-colors duration-300">
+    <div id="app" class="flex h-screen overflow-hidden">
+        <!-- Left Sidebar -->
+        <aside class="w-20 lg:w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex-col justify-between hidden md:flex">
+            <div>
+                <a href="/home.html" class="h-16 flex items-center justify-center lg:justify-start lg:pl-6">
+                    <h1 class="text-3xl font-pacifico text-indigo-600 dark:text-indigo-400">A</h1>
+                    <h1 class="text-3xl font-pacifico text-indigo-600 dark:text-indigo-400 hidden lg:block ml-2">AMIGO</h1>
+                </a>
+                <nav class="mt-8">
+                    <ul>
+                        <li><a href="/home.html" class="flex items-center justify-center lg:justify-start py-3 px-6 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-800 dark:hover:text-white">
+                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                            <span class="ml-4 hidden lg:block">Home</span>
+                        </a></li>
+                        <li><a href="#" class="flex items-center justify-center lg:justify-start py-3 px-6 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-800 dark:hover:text-white">
+                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path></svg>
+                            <span class="ml-4 hidden lg:block">Explore</span>
+                        </a></li>
+                        <li><a href="#" class="flex items-center justify-center lg:justify-start py-3 px-6 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-800 dark:hover:text-white">
+                             <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                            <span class="ml-4 hidden lg:block">Messages</span>
+                        </a></li>
+                        <li><a href="/profile.html" class="flex items-center justify-center lg:justify-start py-3 px-6 text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 border-l-4 border-indigo-500 font-semibold">
+                            <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path></svg>
+                            <span class="ml-4 hidden lg:block">Profile</span>
+                        </a></li>
+                    </ul>
+                </nav>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 flex flex-col overflow-hidden">
+            <!-- Top Navigation -->
+            <header class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 h-16 flex items-center justify-between px-4 md:px-6 flex-shrink-0">
+                 <div class="md:hidden">
+                    <h1 class="text-xl font-pacifico text-indigo-600 dark:text-indigo-400">AMIGO</h1>
+                </div>
+                <div class="hidden md:block">
+                    <h2 class="text-xl font-bold">Profile</h2>
+                </div>
+                <div class="flex items-center space-x-4">
+                     <button id="darkModeToggle" class="p-2 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-800 focus:ring-indigo-500">
+                        <svg id="moonIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+                        <svg id="sunIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                    </button>
+                    <button class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
+                        <svg class="h-6 w-6 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                    </button>
+                     <a href="/index.html" class="hidden sm:block px-4 py-2 text-sm font-semibold bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Logout</a>
+                </div>
+            </header>
+
+            <!-- Profile Content -->
+            <div class="flex-1 overflow-y-auto">
+                <div class="cover-photo h-48 md:h-64 w-full"></div>
+                <div class="px-4 md:px-8">
+                    <div class="flex flex-col md:flex-row items-center md:items-end -mt-16 md:-mt-20">
+                         <img id="profile-pic" class="h-32 w-32 md:h-40 md:w-40 rounded-full border-4 border-white dark:border-gray-900 object-cover" src="https://i.pravatar.cc/300?u=a042581f4e29026704d" alt="Profile picture">
+                         <div class="md:ml-6 mt-4 md:mt-0 text-center md:text-left flex-grow">
+                             <h2 id="profile-name" class="text-2xl md:text-3xl font-bold">John Doe</h2>
+                             <p class="text-gray-500 dark:text-gray-400">@johndoe</p>
+                         </div>
+                         <button id="edit-profile-btn" class="mt-4 md:mt-0 px-6 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700">Edit Profile</button>
+                    </div>
+
+                    <div class="mt-6 border-t border-gray-200 dark:border-gray-700 pt-6">
+                        <p id="profile-bio" class="text-gray-600 dark:text-gray-300">Web developer, coffee enthusiast, and lifelong learner. Building the future of the web, one line of code at a time.</p>
+                        <div class="flex space-x-6 mt-4">
+    <div><span class="font-bold" id="post-count">0</span> <span class="text-gray-500">Posts</span></div>
+    <div><span class="font-bold" id="follower-count">0</span> <span class="text-gray-500">Followers</span></div>
+    <div><span class="font-bold" id="following-count">0</span> <span class="text-gray-500">Following</span></div>
+</div>
+
+                    </div>
+                </div>
+
+<div id="user-posts" class="mt-6 space-y-4">
+  <!-- Posts will appear here -->
+</div>
+
+    <!-- Mobile Bottom Navigation -->
+<nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-2 flex justify-around">
+    <a href="home.html" class="p-2 rounded-md text-indigo-500 bg-gray-100 dark:bg-gray-700">
+        <!-- Home -->
+        <svg class="h-7 w-7" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path>
+        </svg>
+    </a>
+
+    <a href="#" class="p-2 rounded-md text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-indigo-500">
+        <!-- Posts -->
+        <svg class="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path>
+        </svg>
+    </a>
+
+    <a href="notifications.html" class="p-2 rounded-md text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-indigo-500">
+        <!-- Notifications -->
+        <svg class="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+        </svg>
+    </a>
+
+    <a href="friends.html" class="p-2 rounded-md text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-indigo-500">
+        <!-- 👤 This was Profile, now goes to Friends -->
+        <svg class="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+        </svg>
+    </a>
+    <!-- Add this in the mobile bottom nav section -->
+<a id="mobile-logout" class="p-2 rounded-md text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-red-500">
+  <svg class="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-6 0v-1m6 0H9" />
+  </svg>
+</a>
+
+</nav>
+    <script type="module" src="dashboard.js"></script>
+ <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, signOut, onAuthStateChanged,} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getFirestore, doc, getDoc, setDoc, collection, query, where, onSnapshot, orderBy, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCh4rG-JBamK1YVjZIKy49BL7sO_cUzuog",
+    authDomain: "idr-488b2.firebaseapp.com",
+    databaseURL: "https://idr-488b2-default-rtdb.firebaseio.com",
+    projectId: "idr-488b2",
+    storageBucket: "idr-488b2.appspot.com",
+    messagingSenderId: "220979507758",
+    appId: "1:220979507758:web:d2860ac10cfb58ad5725bf"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const storage = getStorage(app);
+  
+  const editProfileBtn = document.getElementById('edit-profile-btn');
+  const cancelEditBtn = document.getElementById('cancel-edit-btn');
+  const editModal = document.getElementById('edit-modal');
+  const editProfileForm = document.getElementById('edit-profile-form');
+  const profilePic = document.getElementById('profile-pic');
+  const profileName = document.getElementById('profile-name');
+  const profileBio = document.getElementById('profile-bio');
+  const followerCount = document.getElementById('follower-count');
+  const followingCount = document.getElementById('following-count');
+  const modalPfpPreview = document.getElementById('modal-pfp-preview');
+  const pfpUpload = document.getElementById('pfp-upload');
+  const editName = document.getElementById('edit-name');
+  const editBio = document.getElementById('edit-bio');
+  const postContainer = document.getElementById("user-posts");
+
+  let currentUser = null;
+  let newProfilePicFile = null;
+
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+      window.location.href = "/index.html";
+    } else {
+      currentUser = user;
+
+      const userDoc = doc(db, "users", user.uid);
+      const snapshot = await getDoc(userDoc);
+
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+
+        profileName.textContent = data.name || "No Name";
+        profileBio.textContent = data.bio || "No bio yet.";
+        profilePic.src = data.profilePic || `https://i.pravatar.cc/300?u=${user.uid}`;
+        followerCount.textContent = data.followers ? data.followers.length : 0;
+        followingCount.textContent = data.following ? data.following.length : 0;
+      } else {
+        await setDoc(userDoc, {
+          name: "New User",
+          bio: "",
+          profilePic: "",
+          followers: [],
+          following: []
+        });
+      }
+
+      // ✅ Real-time post updates (after profile is ready)
+      const postsQuery = query(
+        collection(db, "posts"),
+        where("userId", "==", user.uid),
+        orderBy("timestamp", "desc")
+      );
+    onSnapshot(postsQuery, (snapshot) => {
+  postContainer.innerHTML = ""; // Clear old posts
+  snapshot.forEach((docSnap) => {
+    const post = docSnap.data();
+    const postId = docSnap.id;
+
+    const div = document.createElement("div");
+    div.className = "bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-4";
+    div.innerHTML = `
+      <div class="flex items-center gap-3 mb-2">
+        <img src="${post.profilePic}" class="w-10 h-10 rounded-full" />
+        <div>
+          <p class="font-semibold">${post.name}</p>
+          <p class="text-sm text-gray-500 dark:text-gray-400">${new Date(post.timestamp?.toDate()).toLocaleString()}</p>
+        </div>
+      </div>
+      <p class="mt-2 text-gray-700 dark:text-gray-300">${post.text}</p>
+      ${post.imageUrl ? `<img src="${post.imageUrl}" class="mt-3 rounded-lg w-full max-h-72 object-cover" />` : ""}
+
+
+      <div class="mt-3 flex items-center gap-4">
+        <button class="like-btn" data-id="${postId}">
+          ❤️ <span class="like-count">${post.likes?.length || 0}</span>
+        </button>
+        <button class="comment-btn" data-id="${postId}">💬 Comments</button>
+      </div>
+
+      <!-- Comment Section -->
+      <div class="comments-section mt-3 hidden" data-id="${postId}">
+        <div class="comments-list space-y-2"></div>
+        <input type="text" placeholder="Add a comment..." class="comment-input mt-2 p-2 border rounded w-full" />
+        <button class="submit-comment mt-1 bg-blue-500 text-white px-3 py-1 rounded">Post</button>
+      </div>
+    `;
+
+    // Like button event
+    div.querySelector(".like-btn").addEventListener("click", async () => {
+      const postRef = doc(db, "posts", postId);
+      const postSnap = await getDoc(postRef);
+      const postData = postSnap.data();
+      const likes = postData.likes || [];
+      const userId = auth.currentUser.uid;
+
+      if (likes.includes(userId)) {
+        await updateDoc(postRef, { likes: likes.filter(id => id !== userId) });
+      } else {
+        await updateDoc(postRef, { likes: [...likes, userId] });
+      }
+    });
+
+    // Comment toggle
+    div.querySelector(".comment-btn").addEventListener("click", () => {
+      const section = div.querySelector(`.comments-section[data-id="${postId}"]`);
+      if (section) {
+        section.classList.toggle("hidden");
+      }
+    });
+
+    // Submit comment
+    div.querySelector(".submit-comment").addEventListener("click", async () => {
+      const section = div.querySelector(`.comments-section[data-id="${postId}"]`);
+      const input = section.querySelector(".comment-input");
+      const commentText = input.value.trim();
+
+      if (!commentText) return;
+
+      const user = auth.currentUser;
+      const userSnap = await getDoc(doc(db, "users", user.uid));
+      const userData = userSnap.data();
+
+      await addDoc(collection(db, "posts", postId, "comments"), {
+        text: commentText,
+        name: userData.name || "Unknown",
+        profilePic: userData.profilePic || "",
+        timestamp: serverTimestamp()
+      });
+
+      input.value = "";
+    });
+
+    // Real-time comments display
+    const commentsList = div.querySelector(".comments-list");
+    const commentsRef = collection(db, "posts", postId, "comments");
+    const commentsQuery = query(commentsRef, orderBy("timestamp", "asc"));
+
+    onSnapshot(commentsQuery, (commentsSnap) => {
+      commentsList.innerHTML = "";
+      commentsSnap.forEach((commentDoc) => {
+        const comment = commentDoc.data();
+        commentsList.innerHTML += `
+          <div class="bg-gray-100 dark:bg-gray-700 p-2 rounded">
+            <div class="flex items-center gap-2">
+              <img src="${comment.profilePic}" class="w-6 h-6 rounded-full" />
+              <p class="text-sm font-semibold">${comment.name}</p>
+            </div>
+            <p class="text-sm text-gray-800 dark:text-gray-200 mt-1">${comment.text}</p>
+          </div>
+        `;
+      });
+    });
+    postContainer.appendChild(div);
+  });
+});
+    }
+  });
+   document.getElementById('mobile-logout')?.addEventListener('click', async () => {
+    try {
+      await signOut(auth);
+      window.location.href = "/index.html";
+    } catch (error) {
+      alert("Failed to logout. Try again.");
+      console.error("Logout error:", error);
+    }
+  });
+</script>
+<script type="module">
+  import { protectPage } from "./authCheck.js";
+
+  protectPage(); // 🔒 only logged in users allowed
+   
+</script>
+  <script type="module">
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", async () => {
+      await signOut(auth);
+      window.location.href = "/index.html";
+    });
+  }
+</script>
+<script src="profile.js"></script>
+</body>
+</html>
