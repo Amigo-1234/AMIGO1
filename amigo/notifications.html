@@ -1,0 +1,89 @@
+<!-- notifications.html -->
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Notifications</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 p-4">
+
+  <a href="/home.html" class="text-indigo-600 dark:text-indigo-400 hover:underline block mb-4">&larr; Back to Home</a>
+  <h1 class="text-2xl font-bold text-center text-indigo-600 mb-6">Notifications</h1>
+
+  <div id="notifications" class="space-y-4"></div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, collection, query, orderBy, onSnapshot, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCh4rG-JBamK1YVjZIKy49BL7sO_cUzuog",
+      authDomain: "idr-488b2.firebaseapp.com",
+      projectId: "idr-488b2",
+      storageBucket: "idr-488b2.appspot.com",
+      messagingSenderId: "220979507758",
+      appId: "1:220979507758:web:d2860ac10cfb58ad5725bf"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const notificationsContainer = document.getElementById("notifications");
+
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        window.location.href = "/index.html";
+        return;
+      }
+
+      const notifRef = collection(db, "users", user.uid, "notifications");
+      const notifQuery = query(notifRef, orderBy("timestamp", "desc"));
+
+      onSnapshot(notifQuery, async (snapshot) => {
+        notificationsContainer.innerHTML = "";
+        snapshot.forEach(async (docSnap) => {
+          const notif = docSnap.data();
+
+          let message = "";
+          let link = "#";
+          const fromSnap = await getDoc(doc(db, "users", notif.fromUserId));
+          const fromUser = fromSnap.data();
+
+          if (notif.type === "like") {
+            message = `<strong>${fromUser.name}</strong> liked your post.`;
+            link = `/post.html?id=${notif.postId}`;
+          } else if (notif.type === "comment") {
+            message = `<strong>${fromUser.name}</strong> commented on your post.`;
+            link = `/post.html?id=${notif.postId}`;
+          } else if (notif.type === "follow") {
+            message = `<strong>${fromUser.name}</strong> followed you.`;
+            link = `/user.html?id=${notif.fromUserId}`;
+          }
+
+          const div = document.createElement("div");
+          div.className = "bg-white dark:bg-gray-800 p-4 rounded shadow";
+          div.innerHTML = `
+            <a href="${link}" class="hover:underline">
+              <p>${message}</p>
+              <p class="text-sm text-gray-500 mt-1">${new Date(notif.timestamp?.toDate()).toLocaleString()}</p>
+            </a>
+          `;
+
+          notificationsContainer.appendChild(div);
+
+          // Mark as read (optional)
+          if (!notif.read) {
+            await updateDoc(doc(db, "users", user.uid, "notifications", docSnap.id), {
+              read: true
+            });
+          }
+        });
+      });
+    });
+  </script>
+</body>
+</html>

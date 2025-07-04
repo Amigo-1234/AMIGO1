@@ -1,0 +1,181 @@
+<!-- friends.html -->
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AMIGO - Friends</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
+  <div class="max-w-2xl mx-auto mt-10 px-4">
+    
+    <!-- 🔙 Back Button -->
+    <a href="/home.html" class="text-indigo-600 dark:text-indigo-400 hover:underline block mb-2">&larr; Back to Home</a>
+
+    <h1 class="text-3xl font-bold mb-6 text-center text-indigo-600">Find Friends</h1>
+
+    <!-- 🔍 Search Input -->
+    <input type="text" id="searchInput" placeholder="Search users..." class="w-full px-4 py-2 mb-6 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-800 dark:border-gray-600"/>
+
+    <!-- 🔍 Search Results -->
+    <div id="results" class="space-y-4"></div>
+
+    <!-- 🌟 Suggested Users -->
+    <h2 class="text-2xl font-semibold mt-10 mb-4 text-gray-800 dark:text-gray-200">Suggested Users</h2>
+    <div id="suggested-users" class="mt-6 space-y-4"></div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, collection, getDocs, doc, getDoc, updateDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCh4rG-JBamK1YVjZIKy49BL7sO_cUzuog",
+      authDomain: "idr-488b2.firebaseapp.com",
+      projectId: "idr-488b2",
+      storageBucket: "idr-488b2.appspot.com",
+      messagingSenderId: "220979507758",
+      appId: "1:220979507758:web:d2860ac10cfb58ad5725bf"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const searchInput = document.getElementById("searchInput");
+    const resultsContainer = document.getElementById("results");
+    const suggestedContainer = document.getElementById("suggested-users");
+
+    let currentUser;
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) return window.location.href = "/index.html";
+      currentUser = user;
+
+      // 🔁 Load Suggested Users
+      const usersSnap = await getDocs(collection(db, "users"));
+      let userList = [];
+      usersSnap.forEach(docSnap => {
+        if (docSnap.id !== user.uid) {
+          userList.push({ id: docSnap.id, ...docSnap.data() });
+        }
+      });
+
+      // Shuffle and display
+      userList = userList.sort(() => 0.5 - Math.random()).slice(0, 5);
+      suggestedContainer.innerHTML = "";
+
+      userList.forEach(userData => {
+       const div = document.createElement("div");
+div.className = "flex items-center justify-between bg-white dark:bg-gray-800 p-3 rounded shadow cursor-pointer";
+
+div.addEventListener("click", () => {
+  window.location.href = `/user.html?id=${userData.id}`;
+});
+
+        div.innerHTML = `
+          <div class="flex items-center gap-3">
+            <img src="${userData.profilePic || 'https://i.pravatar.cc/150?u=' + userData.id}" class="h-10 w-10 rounded-full object-cover" />
+            <div>
+              <p class="font-semibold">${userData.name || "Anonymous"}</p>
+            </div>
+          </div>
+          <button class="follow-btn text-sm font-semibold text-indigo-600 border border-indigo-500 rounded-full px-3 py-1 hover:bg-indigo-500 hover:text-white" data-id="${userData.id}">
+            Follow
+          </button>
+        `;
+
+        suggestedContainer.appendChild(div);
+
+        div.querySelector(".follow-btn").addEventListener("click", async (e) => {
+          const targetId = e.target.dataset.id;
+          const userRef = doc(db, "users", user.uid);
+          const targetRef = doc(db, "users", targetId);
+
+          await updateDoc(userRef, { following: arrayUnion(targetId) });
+          await updateDoc(targetRef, { followers: arrayUnion(user.uid) });
+
+          e.target.textContent = "Following";
+          e.target.disabled = true;
+          e.target.classList.add("bg-indigo-600", "text-white");
+        });
+      });
+    });
+
+    // 🔎 Search Users
+    searchInput.addEventListener("input", async () => {
+      const searchTerm = searchInput.value.toLowerCase().trim();
+      resultsContainer.innerHTML = "";
+      if (!searchTerm || !currentUser) return;
+
+      const usersSnap = await getDocs(collection(db, "users"));
+      usersSnap.forEach(async (docSnap) => {
+        const data = docSnap.data();
+        const uid = docSnap.id;
+
+        if (uid === currentUser.uid) return;
+        if (!data.name?.toLowerCase().includes(searchTerm)) return;
+
+        const userCard = document.createElement("div");
+        userCard.className = "flex items-center justify-between bg-white dark:bg-gray-800 p-4 rounded-lg shadow";
+
+        const img = document.createElement("img");
+        img.src = data.profilePic || `https://i.pravatar.cc/150?u=${uid}`;
+        img.className = "h-12 w-12 rounded-full object-cover";
+        img.style.cursor = "pointer";
+        img.addEventListener("click", () => window.location.href = `/user.html?id=${uid}`);
+
+        const info = document.createElement("a");
+        info.href = `/user.html?id=${uid}`;
+        info.className = "font-semibold hover:underline";
+        info.innerHTML = `<p>${data.name}</p><p class="text-sm text-gray-500 dark:text-gray-400">${data.bio || ""}</p>`;
+
+        const btn = document.createElement("button");
+        btn.className = "px-4 py-1 text-sm rounded-lg font-semibold bg-indigo-600 text-white hover:bg-indigo-700";
+        btn.textContent = "Follow";
+
+        const currentUserDoc = await getDoc(doc(db, "users", currentUser.uid));
+        const currentUserData = currentUserDoc.data();
+        const isFollowing = currentUserData.following?.includes(uid);
+
+        if (isFollowing) {
+          btn.textContent = "Unfollow";
+          btn.classList.remove("bg-indigo-600");
+          btn.classList.add("bg-gray-600");
+        }
+
+        btn.addEventListener("click", async () => {
+          const myRef = doc(db, "users", currentUser.uid);
+          const theirRef = doc(db, "users", uid);
+
+          if (btn.textContent === "Follow") {
+            await updateDoc(myRef, { following: arrayUnion(uid) });
+            await updateDoc(theirRef, { followers: arrayUnion(currentUser.uid) });
+            btn.textContent = "Unfollow";
+            btn.classList.remove("bg-indigo-600");
+            btn.classList.add("bg-gray-600");
+          } else {
+            await updateDoc(myRef, { following: arrayRemove(uid) });
+            await updateDoc(theirRef, { followers: arrayRemove(currentUser.uid) });
+            btn.textContent = "Follow";
+            btn.classList.add("bg-indigo-600");
+            btn.classList.remove("bg-gray-600");
+          }
+        });
+
+        const wrapper = document.createElement("div");
+        wrapper.className = "flex items-center gap-4";
+        wrapper.appendChild(img);
+        wrapper.appendChild(info);
+
+        userCard.appendChild(wrapper);
+        userCard.appendChild(btn);
+        resultsContainer.appendChild(userCard);
+      });
+    });
+  </script>
+</body>
+</html>
+
