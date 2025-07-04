@@ -117,9 +117,8 @@
     <!-- Firebase App (core SDK) -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-  import { getFirestore, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
   const firebaseConfig = {
     apiKey: "AIzaSyCh4rG-JBamK1YVjZIKy49BL7sO_cUzuog",
     authDomain: "idr-488b2.firebaseapp.com",
@@ -133,8 +132,8 @@
 
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
-  const db = getFirestore(app);
 
+  // Now link to forms
   document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('loginForm');
     const signupForm = document.getElementById('signupForm');
@@ -153,23 +152,26 @@
       return valid;
     }
 
-    signupForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      if (validateForm(signupForm, signupError)) {
-        const email = document.getElementById('signup-email').value;
-        const password = document.getElementById('signup-password').value;
+   signupForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if (validateForm(signupForm, signupError)) {
+    const email = document.getElementById('signup-email').value;
+    const password = document.getElementById('signup-password').value;
 
-        try {
-          await createUserWithEmailAndPassword(auth, email, password);
-          alert("Signup successful!");
-          window.location.href = "/home.html";
-        } catch (error) {
-          signupError.textContent = error.code === 'auth/email-already-in-use'
-            ? "This email is already registered. Please log in instead."
-            : error.message;
-        }
+    try {
+      await createUserWithEmailAndPassword(auth, email, password);
+      alert("Signup successful!");
+      window.location.href = "/home.html";
+    } catch (error) {
+      if (error.code === 'auth/email-already-in-use') {
+        signupError.textContent = "This email is already registered. Please log in instead.";
+      } else {
+        signupError.textContent = error.message;
       }
-    });
+    }
+  }
+});
+
 
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -179,38 +181,35 @@
 
         try {
           await signInWithEmailAndPassword(auth, email, password);
-          const user = auth.currentUser;
-          if (user) {
-            await updateDoc(doc(db, "users", user.uid), { isOnline: true });
-          }
           alert("Login successful!");
           window.location.href = "/home.html";
         } catch (error) {
           loginError.textContent = error.message;
         }
       }
-    });
+      
+// After login success:
+await updateDoc(doc(db, "users", user.uid), {
+  isOnline: true
+});
 
-    // Redirect if already logged in
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        window.location.href = "/home.html";
-      }
     });
   });
+   // 🔁 If already logged in, go straight to home
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    window.location.href = "/home.html";
+  }
+});
 </script>
-
 <script type="module">
   import { redirectIfLoggedIn } from "./authCheck.js";
-  redirectIfLoggedIn();
+
+  redirectIfLoggedIn(); // 🏃 send to home if already logged in
 </script>
 
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/service-worker.js')
-        .then((reg) => console.log('✅ Service Worker registered:', reg.scope))
-        .catch((err) => console.error('❌ Service Worker registration failed:', err));
-    });
-  }
-</script>
+
+
+</body>
+</html>
+
