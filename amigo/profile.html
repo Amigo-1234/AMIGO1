@@ -97,6 +97,24 @@
 
                     </div>
                 </div>
+                 <!-- Edit Profile Modal -->
+<div id="edit-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+  <div class="bg-white dark:bg-gray-800 p-6 rounded-lg w-full max-w-md">
+    <h2 class="text-xl font-bold mb-4">Edit Profile</h2>
+    <form id="edit-profile-form" class="space-y-4">
+      <div class="text-center">
+        <img id="modal-pfp-preview" class="w-24 h-24 rounded-full mx-auto object-cover" src="" alt="Preview">
+        <input id="pfp-upload" type="file" accept="image/*" class="mt-2 block w-full text-sm">
+      </div>
+      <input id="edit-name" type="text" placeholder="Your Name" class="w-full p-2 rounded border dark:bg-gray-700">
+      <textarea id="edit-bio" rows="3" placeholder="Your Bio" class="w-full p-2 rounded border dark:bg-gray-700"></textarea>
+      <div class="flex justify-between">
+        <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">Save</button>
+        <button id="cancel-edit-btn" type="button" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 rounded hover:bg-gray-400 dark:hover:bg-gray-500">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
 
 <div id="user-posts" class="mt-6 space-y-4">
   <!-- Posts will appear here -->
@@ -156,6 +174,50 @@
 
   let currentUser = null;
   let newProfilePicFile = null;
+
+  editProfileBtn.addEventListener("click", () => {
+  editModal.classList.remove("hidden");
+  modalPfpPreview.src = profilePic.src;
+  editName.value = profileName.textContent;
+  editBio.value = profileBio.textContent;
+});
+
+cancelEditBtn.addEventListener("click", () => {
+  editModal.classList.add("hidden");
+});
+
+pfpUpload.addEventListener("change", (e) => {
+  newProfilePicFile = e.target.files[0];
+  if (newProfilePicFile) {
+    modalPfpPreview.src = URL.createObjectURL(newProfilePicFile);
+  }
+});
+
+editProfileForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const name = editName.value.trim();
+  const bio = editBio.value.trim();
+  const updates = { name, bio };
+
+  if (newProfilePicFile) {
+    const storageRef = ref(storage, `profilePics/${currentUser.uid}`);
+    await uploadBytes(storageRef, newProfilePicFile);
+    const url = await getDownloadURL(storageRef);
+    updates.profilePic = url;
+  }
+
+  const userDoc = doc(db, "users", currentUser.uid);
+  await updateDoc(userDoc, updates);
+
+  profileName.textContent = updates.name;
+  profileBio.textContent = updates.bio;
+  if (updates.profilePic) {
+    profilePic.src = updates.profilePic;
+  }
+
+  editModal.classList.add("hidden");
+});
 
   onAuthStateChanged(auth, async (user) => {
     if (!user) {
