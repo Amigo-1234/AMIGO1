@@ -1,380 +1,379 @@
 <!DOCTYPE html>
-<html lang="en" class="">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AMIGO - Profile</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="style.css">
     <script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
                     fontFamily: {
-                        'sans': ['Inter', 'sans-serif'],
-                        'pacifico': ['Pacifico', 'cursive'],
+                        'cal-sans': ['Cal Sans', 'ui-sans-serif', 'system-ui'],
+                        'noto-sans': ['Noto Sans', 'ui-sans-serif', 'system-ui']
                     }
                 }
             }
         }
     </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
-<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 font-sans transition-colors duration-300">
-    <div id="app" class="flex h-screen overflow-hidden">
-        <!-- Left Sidebar -->
-        <aside class="w-20 lg:w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex-col justify-between hidden md:flex">
-            <div>
-                <a href="/home.html" class="h-16 flex items-center justify-center lg:justify-start lg:pl-6">
-                    <h1 class="text-3xl font-pacifico text-indigo-600 dark:text-indigo-400">A</h1>
-                    <h1 class="text-3xl font-pacifico text-indigo-600 dark:text-indigo-400 hidden lg:block ml-2">AMIGO</h1>
-                </a>
-                <nav class="mt-8">
-                    <ul>
-                        <li><a href="/home.html" class="flex items-center justify-center lg:justify-start py-3 px-6 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-800 dark:hover:text-white">
-                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-                            <span class="ml-4 hidden lg:block">Home</span>
-                        </a></li>
-                        <li><a href="#" class="flex items-center justify-center lg:justify-start py-3 px-6 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-800 dark:hover:text-white">
-                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path></svg>
-                            <span class="ml-4 hidden lg:block">Explore</span>
-                        </a></li>
-                        <li><a href="#" class="flex items-center justify-center lg:justify-start py-3 px-6 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-800 dark:hover:text-white">
-                             <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
-                            <span class="ml-4 hidden lg:block">Messages</span>
-                        </a></li>
-                        <li><a href="/profile.html" class="flex items-center justify-center lg:justify-start py-3 px-6 text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 border-l-4 border-indigo-500 font-semibold">
-                            <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path></svg>
-                            <span class="ml-4 hidden lg:block">Profile</span>
-                        </a></li>
-                    </ul>
-                </nav>
-            </div>
-        </aside>
+<body class="bg-gray-50 dark:bg-gray-900 font-noto-sans transition-colors duration-300">
+    <!-- Navigation -->
+    <nav class="bg-white dark:bg-gray-800 shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex items-center">
+                    <div class="bg-gradient-to-r from-blue-500 to-purple-600 w-10 h-10 rounded-xl flex items-center justify-center">
+                        <span class="text-white text-lg font-bold">A</span>
+                    </div>
+                    <span class="ml-3 text-xl font-bold text-gray-900 dark:text-white">AMIGO</span>
+                </div>
 
-        <!-- Main Content -->
-        <main class="flex-1 flex flex-col overflow-hidden">
-            <!-- Top Navigation -->
-            <header class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 h-16 flex items-center justify-between px-4 md:px-6 flex-shrink-0">
-                 <div class="md:hidden">
-                    <h1 class="text-xl font-pacifico text-indigo-600 dark:text-indigo-400">AMIGO</h1>
+                <!-- Search Bar -->
+                <div class="flex-1 max-w-2xl mx-8">
+                    <div class="relative">
+                        <input type="text" id="searchInput" placeholder="Search AMIGO..." 
+                               class="w-full px-4 py-2 pl-10 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-all duration-200">
+                        <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                    </div>
                 </div>
-                <div class="hidden md:block">
-                    <h2 class="text-xl font-bold">Profile</h2>
-                </div>
+
+                <!-- Navigation Items -->
                 <div class="flex items-center space-x-4">
-                     <button id="darkModeToggle" class="p-2 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-800 focus:ring-indigo-500">
-                        <svg id="moonIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
-                        <svg id="sunIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                    <button id="homeBtn" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200">
+                        <i class="fas fa-home text-gray-600 dark:text-gray-300"></i>
                     </button>
-                    <button class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
-                        <svg class="h-6 w-6 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                    <button id="darkModeToggle" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200">
+                        <i class="fas fa-moon text-gray-600 dark:text-gray-300"></i>
                     </button>
-                     <a href="/index.html" class="hidden sm:block px-4 py-2 text-sm font-semibold bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Logout</a>
+                    <button id="notificationsBtn" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 relative">
+                        <i class="fas fa-bell text-gray-600 dark:text-gray-300"></i>
+                        <span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
+                    </button>
+                    <button id="messagesBtn" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200">
+                        <i class="fas fa-envelope text-gray-600 dark:text-gray-300"></i>
+                    </button>
+                    <button id="logoutBtn" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200">
+                        <i class="fas fa-sign-out-alt text-gray-600 dark:text-gray-300"></i>
+                    </button>
                 </div>
-            </header>
+            </div>
+        </div>
+    </nav>
 
-            <!-- Profile Content -->
-            <div class="flex-1 overflow-y-auto">
-                <div class="cover-photo h-48 md:h-64 w-full"></div>
-                <div class="px-4 md:px-8">
-                    <div class="flex flex-col md:flex-row items-center md:items-end -mt-16 md:-mt-20">
-                         <img id="profile-pic" class="h-32 w-32 md:h-40 md:w-40 rounded-full border-4 border-white dark:border-gray-900 object-cover" src="https://i.pravatar.cc/300?u=a042581f4e29026704d" alt="Profile picture">
-                         <div class="md:ml-6 mt-4 md:mt-0 text-center md:text-left flex-grow">
-                             <h2 id="profile-name" class="text-2xl md:text-3xl font-bold">John Doe</h2>
-                             <p class="text-gray-500 dark:text-gray-400">@johndoe</p>
-                         </div>
-                         <button id="edit-profile-btn" class="mt-4 md:mt-0 px-6 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700">Edit Profile</button>
+    <!-- Profile Header -->
+    <div class="relative">
+        <!-- Cover Photo -->
+        <div class="h-64 bg-gradient-to-r from-blue-500 to-purple-600 relative">
+            <div class="absolute inset-0 bg-black bg-opacity-20"></div>
+            <button id="editCoverBtn" class="absolute top-4 right-4 bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg transition-all duration-200">
+                <i class="fas fa-camera mr-2"></i>Edit Cover
+            </button>
+        </div>
+
+        <!-- Profile Info -->
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="relative -mt-16 pb-8">
+                <div class="flex flex-col sm:flex-row sm:items-end sm:space-x-6">
+                    <!-- Profile Picture -->
+                    <div class="relative">
+                        <div class="w-32 h-32 rounded-full border-4 border-white dark:border-gray-800 bg-gray-300 dark:bg-gray-600 overflow-hidden shadow-xl">
+                            <img id="profilePicture" src="https://via.placeholder.com/128x128" alt="Profile" class="w-full h-full object-cover">
+                        </div>
+                        <button id="editProfilePicBtn" class="absolute bottom-2 right-2 bg-blue-500 hover:bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center transition-colors duration-200">
+                            <i class="fas fa-camera text-sm"></i>
+                        </button>
                     </div>
 
-                    <div class="mt-6 border-t border-gray-200 dark:border-gray-700 pt-6">
-                        <p id="profile-bio" class="text-gray-600 dark:text-gray-300">Web developer, coffee enthusiast, and lifelong learner. Building the future of the web, one line of code at a time.</p>
-                        <div class="flex space-x-6 mt-4">
-    <div><span class="font-bold" id="post-count">0</span> <span class="text-gray-500">Posts</span></div>
-    <div><span class="font-bold" id="follower-count">0</span> <span class="text-gray-500">Followers</span></div>
-    <div><span class="font-bold" id="following-count">0</span> <span class="text-gray-500">Following</span></div>
-</div>
+                    <!-- Profile Details -->
+                    <div class="flex-1 mt-4 sm:mt-0">
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                                <h1 id="profileName" class="text-3xl font-bold text-gray-900 dark:text-white">John Doe</h1>
+                                <p id="profileUsername" class="text-xl text-gray-600 dark:text-gray-400">@johndoe</p>
+                                <p id="profileBio" class="mt-2 text-gray-700 dark:text-gray-300">Software Developer | Tech Enthusiast | Coffee Lover ☕</p>
+                                <div class="mt-2 flex items-center text-gray-600 dark:text-gray-400">
+                                    <i class="fas fa-map-marker-alt mr-2"></i>
+                                    <span id="profileLocation">San Francisco, CA</span>
+                                    <i class="fas fa-calendar-alt ml-4 mr-2"></i>
+                                    <span id="profileJoinDate">Joined March 2020</span>
+                                </div>
+                            </div>
+                            <div class="mt-4 sm:mt-0 flex space-x-3">
+                                <button id="editProfileBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200">
+                                    Edit Profile
+                                </button>
+                                <button id="shareProfileBtn" class="bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 px-6 py-2 rounded-lg font-medium transition-colors duration-200">
+                                    Share
+                                </button>
+                            </div>
+                        </div>
 
+                        <!-- Stats -->
+                        <div class="mt-6 grid grid-cols-4 gap-8">
+                            <div class="text-center">
+                                <div id="postsCount" class="text-2xl font-bold text-gray-900 dark:text-white">245</div>
+                                <div class="text-sm text-gray-500 dark:text-gray-400">Posts</div>
+                            </div>
+                            <div class="text-center">
+                                <div id="followersCount" class="text-2xl font-bold text-gray-900 dark:text-white">3.4K</div>
+                                <div class="text-sm text-gray-500 dark:text-gray-400">Followers</div>
+                            </div>
+                            <div class="text-center">
+                                <div id="followingCount" class="text-2xl font-bold text-gray-900 dark:text-white">1.2K</div>
+                                <div class="text-sm text-gray-500 dark:text-gray-400">Following</div>
+                            </div>
+                            <div class="text-center">
+                                <div id="likesCount" class="text-2xl font-bold text-gray-900 dark:text-white">12.5K</div>
+                                <div class="text-sm text-gray-500 dark:text-gray-400">Likes</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-
-   <!-- Edit Profile Modal -->
-    <div id="edit-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-white dark:bg-gray-800 rounded-lg p-8 w-full max-w-md">
-            <h2 class="text-2xl font-bold mb-6">Edit Profile</h2>
-            <form id="edit-profile-form">
-                <div class="flex flex-col items-center mb-6">
-                    <img id="modal-pfp-preview" src="https://i.pravatar.cc/300?u=a042581f4e29026704d" class="h-24 w-24 rounded-full object-cover mb-4">
-                    <label for="pfp-upload" class="cursor-pointer text-indigo-600 dark:text-indigo-400 hover:underline">
-                        Change Profile Photo
-                        <input type="file" id="pfp-upload" class="hidden" accept="image/*">
-                    </label>
-                </div>
-                <div class="mb-4">
-                    <label for="edit-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Name</label>
-                    <input type="text" id="edit-name" class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                </div>
-                <div class="mb-6">
-                    <label for="edit-bio" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Bio</label>
-                    <textarea id="edit-bio" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
-                </div>
-                <div class="flex justify-end space-x-4">
-                    <button type="button" id="cancel-edit-btn" class="px-6 py-2 bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 font-semibold rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500">Cancel</button>
-                    <button type="submit" class="px-6 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700">Save</button>
-                </div>
-            </form>
+            </div>
         </div>
     </div>
-    
-<div id="user-posts" class="mt-6 space-y-4">
-  <!-- Posts will appear here -->
-</div>
 
-    <!-- Mobile Bottom Navigation -->
-    <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-2 flex justify-around">
-         <a href="/home.html" class="p-2 rounded-md text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-indigo-500">
-            <svg class="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-        </a>
-        <a href="#" class="p-2 rounded-md text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-indigo-500">
-            <svg class="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path></svg>
-        </a>
-        <a href="#" class="p-2 rounded-md text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-indigo-500">
-            <svg class="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
-        </a>
-        <a href="/profile.html" class="p-2 rounded-md text-indigo-500 bg-gray-100 dark:bg-gray-700">
-             <svg class="h-7 w-7" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path></svg>
-        </a>
-    </nav>
-    <script type="module" src="dashboard.js"></script>
- <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-  import { getFirestore, doc, getDoc, setDoc, collection, query, where, onSnapshot, orderBy, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-  import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+    <!-- Profile Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left Column - About -->
+            <div class="lg:col-span-1">
+                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 mb-6">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">About</h3>
+                    <div class="space-y-4">
+                        <div class="flex items-center">
+                            <i class="fas fa-briefcase text-gray-500 dark:text-gray-400 mr-3"></i>
+                            <div>
+                                <div class="text-sm text-gray-500 dark:text-gray-400">Work</div>
+                                <div id="profileWork" class="text-gray-900 dark:text-white">Software Engineer at TechCorp</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-graduation-cap text-gray-500 dark:text-gray-400 mr-3"></i>
+                            <div>
+                                <div class="text-sm text-gray-500 dark:text-gray-400">Education</div>
+                                <div id="profileEducation" class="text-gray-900 dark:text-white">Stanford University</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-heart text-gray-500 dark:text-gray-400 mr-3"></i>
+                            <div>
+                                <div class="text-sm text-gray-500 dark:text-gray-400">Relationship</div>
+                                <div id="profileRelationship" class="text-gray-900 dark:text-white">Single</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-globe text-gray-500 dark:text-gray-400 mr-3"></i>
+                            <div>
+                                <div class="text-sm text-gray-500 dark:text-gray-400">Website</div>
+                                <a href="#" id="profileWebsite" class="text-blue-500 hover:text-blue-600">johndoe.dev</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyCh4rG-JBamK1YVjZIKy49BL7sO_cUzuog",
-    authDomain: "idr-488b2.firebaseapp.com",
-    databaseURL: "https://idr-488b2-default-rtdb.firebaseio.com",
-    projectId: "idr-488b2",
-    storageBucket: "idr-488b2.appspot.com",
-    messagingSenderId: "220979507758",
-    appId: "1:220979507758:web:d2860ac10cfb58ad5725bf"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
-  const storage = getStorage(app);
-
-  const editProfileBtn = document.getElementById('edit-profile-btn');
-  const cancelEditBtn = document.getElementById('cancel-edit-btn');
-  const editModal = document.getElementById('edit-modal');
-  const editProfileForm = document.getElementById('edit-profile-form');
-  const profilePic = document.getElementById('profile-pic');
-  const profileName = document.getElementById('profile-name');
-  const profileBio = document.getElementById('profile-bio');
-  const followerCount = document.getElementById('follower-count');
-  const followingCount = document.getElementById('following-count');
-  const modalPfpPreview = document.getElementById('modal-pfp-preview');
-  const pfpUpload = document.getElementById('pfp-upload');
-  const editName = document.getElementById('edit-name');
-  const editBio = document.getElementById('edit-bio');
-  const postContainer = document.getElementById("user-posts");
-
-  let currentUser = null;
-  let newProfilePicFile = null;
-   
-  editProfileBtn.addEventListener("click", () => {
-  editModal.classList.remove("hidden");
-  modalPfpPreview.src = profilePic.src;
-  editName.value = profileName.textContent;
-  editBio.value = profileBio.textContent;
-});
-
-cancelEditBtn.addEventListener("click", () => {
-  editModal.classList.add("hidden");
-});
-
-pfpUpload.addEventListener("change", (e) => {
-  newProfilePicFile = e.target.files[0];
-  if (newProfilePicFile) {
-    modalPfpPreview.src = URL.createObjectURL(newProfilePicFile);
-  }
-});
-
-editProfileForm.addEventListener("submit", async (e) => {
-  e.preventDefault();
-
-  const name = editName.value.trim();
-  const bio = editBio.value.trim();
-  const updates = { name, bio };
-
-  if (newProfilePicFile) {
-    const storageRef = ref(storage, `profilePics/${currentUser.uid}`);
-    await uploadBytes(storageRef, newProfilePicFile);
-    const url = await getDownloadURL(storageRef);
-    updates.profilePic = url;
-  }
-
-  const userDoc = doc(db, "users", currentUser.uid);
-  await updateDoc(userDoc, updates);
-
-  profileName.textContent = updates.name;
-  profileBio.textContent = updates.bio;
-  if (updates.profilePic) {
-    profilePic.src = updates.profilePic;
-  }
-
-  editModal.classList.add("hidden");
-});
-
-
-  onAuthStateChanged(auth, async (user) => {
-    if (!user) {
-      window.location.href = "/index.html";
-    } else {
-      currentUser = user;
-
-      const userDoc = doc(db, "users", user.uid);
-      const snapshot = await getDoc(userDoc);
-
-      if (snapshot.exists()) {
-        const data = snapshot.data();
-
-        profileName.textContent = data.name || "No Name";
-        profileBio.textContent = data.bio || "No bio yet.";
-        profilePic.src = data.profilePic || `https://i.pravatar.cc/300?u=${user.uid}`;
-        followerCount.textContent = data.followers ? data.followers.length : 0;
-        followingCount.textContent = data.following ? data.following.length : 0;
-      } else {
-        await setDoc(userDoc, {
-          name: "New User",
-          bio: "",
-          profilePic: "",
-          followers: [],
-          following: []
-        });
-      }
-
-      // ✅ Real-time post updates (after profile is ready)
-      const postsQuery = query(
-        collection(db, "posts"),
-        where("userId", "==", user.uid),
-        orderBy("timestamp", "desc")
-      );
-    onSnapshot(postsQuery, (snapshot) => {
-  postContainer.innerHTML = ""; // Clear old posts
-  snapshot.forEach((docSnap) => {
-    const post = docSnap.data();
-    const postId = docSnap.id;
-
-    const div = document.createElement("div");
-    div.className = "bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-4";
-    div.innerHTML = `
-      <div class="flex items-center gap-3 mb-2">
-        <img src="${post.profilePic}" class="w-10 h-10 rounded-full" />
-        <div>
-          <p class="font-semibold">${post.name}</p>
-          <p class="text-sm text-gray-500 dark:text-gray-400">${new Date(post.timestamp?.toDate()).toLocaleString()}</p>
-        </div>
-      </div>
-      <p class="mt-2 text-gray-700 dark:text-gray-300">${post.text}</p>
-      ${post.imageUrl ? `<img src="${post.imageUrl}" class="mt-3 rounded-lg w-full max-h-72 object-cover" />` : ""}
-
-
-      <div class="mt-3 flex items-center gap-4">
-        <button class="like-btn" data-id="${postId}">
-          ❤️ <span class="like-count">${post.likes?.length || 0}</span>
-        </button>
-        <button class="comment-btn" data-id="${postId}">💬 Comments</button>
-      </div>
-
-      <!-- Comment Section -->
-      <div class="comments-section mt-3 hidden" data-id="${postId}">
-        <div class="comments-list space-y-2"></div>
-        <input type="text" placeholder="Add a comment..." class="comment-input mt-2 p-2 border rounded w-full" />
-        <button class="submit-comment mt-1 bg-blue-500 text-white px-3 py-1 rounded">Post</button>
-      </div>
-    `;
-
-    // Like button event
-    div.querySelector(".like-btn").addEventListener("click", async () => {
-      const postRef = doc(db, "posts", postId);
-      const postSnap = await getDoc(postRef);
-      const postData = postSnap.data();
-      const likes = postData.likes || [];
-      const userId = auth.currentUser.uid;
-
-      if (likes.includes(userId)) {
-        await updateDoc(postRef, { likes: likes.filter(id => id !== userId) });
-      } else {
-        await updateDoc(postRef, { likes: [...likes, userId] });
-      }
-    });
-
-    // Comment toggle
-    div.querySelector(".comment-btn").addEventListener("click", () => {
-      const section = div.querySelector(`.comments-section[data-id="${postId}"]`);
-      if (section) {
-        section.classList.toggle("hidden");
-      }
-    });
-
-    // Submit comment
-    div.querySelector(".submit-comment").addEventListener("click", async () => {
-      const section = div.querySelector(`.comments-section[data-id="${postId}"]`);
-      const input = section.querySelector(".comment-input");
-      const commentText = input.value.trim();
-
-      if (!commentText) return;
-
-      const user = auth.currentUser;
-      const userSnap = await getDoc(doc(db, "users", user.uid));
-      const userData = userSnap.data();
-
-      await addDoc(collection(db, "posts", postId, "comments"), {
-        text: commentText,
-        name: userData.name || "Unknown",
-        profilePic: userData.profilePic || "",
-        timestamp: serverTimestamp()
-      });
-
-      input.value = "";
-    });
-
-    // Real-time comments display
-    const commentsList = div.querySelector(".comments-list");
-    const commentsRef = collection(db, "posts", postId, "comments");
-    const commentsQuery = query(commentsRef, orderBy("timestamp", "asc"));
-
-    onSnapshot(commentsQuery, (commentsSnap) => {
-      commentsList.innerHTML = "";
-      commentsSnap.forEach((commentDoc) => {
-        const comment = commentDoc.data();
-        commentsList.innerHTML += `
-          <div class="bg-gray-100 dark:bg-gray-700 p-2 rounded">
-            <div class="flex items-center gap-2">
-              <img src="${comment.profilePic}" class="w-6 h-6 rounded-full" />
-              <p class="text-sm font-semibold">${comment.name}</p>
+                <!-- Friends -->
+                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Friends</h3>
+                        <button class="text-blue-500 hover:text-blue-600 text-sm">See All</button>
+                    </div>
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="text-center">
+                            <div class="w-16 h-16 rounded-lg bg-gray-300 dark:bg-gray-600 overflow-hidden mx-auto mb-2">
+                                <img src="https://via.placeholder.com/64x64" alt="Friend" class="w-full h-full object-cover">
+                            </div>
+                            <div class="text-sm text-gray-900 dark:text-white font-medium">Sarah</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="w-16 h-16 rounded-lg bg-gray-300 dark:bg-gray-600 overflow-hidden mx-auto mb-2">
+                                <img src="https://via.placeholder.com/64x64" alt="Friend" class="w-full h-full object-cover">
+                            </div>
+                            <div class="text-sm text-gray-900 dark:text-white font-medium">Alex</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="w-16 h-16 rounded-lg bg-gray-300 dark:bg-gray-600 overflow-hidden mx-auto mb-2">
+                                <img src="https://via.placeholder.com/64x64" alt="Friend" class="w-full h-full object-cover">
+                            </div>
+                            <div class="text-sm text-gray-900 dark:text-white font-medium">Emma</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="w-16 h-16 rounded-lg bg-gray-300 dark:bg-gray-600 overflow-hidden mx-auto mb-2">
+                                <img src="https://via.placeholder.com/64x64" alt="Friend" class="w-full h-full object-cover">
+                            </div>
+                            <div class="text-sm text-gray-900 dark:text-white font-medium">David</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="w-16 h-16 rounded-lg bg-gray-300 dark:bg-gray-600 overflow-hidden mx-auto mb-2">
+                                <img src="https://via.placeholder.com/64x64" alt="Friend" class="w-full h-full object-cover">
+                            </div>
+                            <div class="text-sm text-gray-900 dark:text-white font-medium">Maria</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="w-16 h-16 rounded-lg bg-gray-300 dark:bg-gray-600 overflow-hidden mx-auto mb-2">
+                                <img src="https://via.placeholder.com/64x64" alt="Friend" class="w-full h-full object-cover">
+                            </div>
+                            <div class="text-sm text-gray-900 dark:text-white font-medium">Tom</div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <p class="text-sm text-gray-800 dark:text-gray-200 mt-1">${comment.text}</p>
-          </div>
-        `;
-      });
-    });
-    postContainer.appendChild(div);
-  });
-});
-    }
-  });
-</script>
-<script type="module">
-  import { protectPage } from "./authCheck.js";
 
-  protectPage(); // 🔒 only logged in users allowed
-</script>
+            <!-- Right Column - Posts -->
+            <div class="lg:col-span-2">
+                <!-- Post Tabs -->
+                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg mb-6">
+                    <div class="flex border-b border-gray-200 dark:border-gray-700">
+                        <button id="postsTab" class="flex-1 px-6 py-4 text-center font-medium text-blue-500 border-b-2 border-blue-500 bg-blue-50 dark:bg-blue-900/20">
+                            Posts
+                        </button>
+                        <button id="photosTab" class="flex-1 px-6 py-4 text-center font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
+                            Photos
+                        </button>
+                        <button id="videosTab" class="flex-1 px-6 py-4 text-center font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
+                            Videos
+                        </button>
+                    </div>
+                </div>
 
-<script src="profile.js"></script>
+                <!-- Posts Content -->
+                <div id="postsContent" class="space-y-6">
+                    <!-- Sample User Post -->
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden">
+                        <div class="p-6">
+                            <div class="flex items-center mb-4">
+                                <div class="w-10 h-10 rounded-full bg-gray-300 dark:bg-gray-600 overflow-hidden">
+                                    <img src="https://via.placeholder.com/40x40" alt="Profile" class="w-full h-full object-cover">
+                                </div>
+                                <div class="ml-3 flex-1">
+                                    <h4 class="font-semibold text-gray-900 dark:text-white">John Doe</h4>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">6 hours ago</p>
+                                </div>
+                                <button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                                    <i class="fas fa-ellipsis-h"></i>
+                                </button>
+                            </div>
+                            <p class="text-gray-700 dark:text-gray-300 mb-4">Working on a new project that I'm really excited about! The tech stack includes React, Node.js, and MongoDB. Can't wait to share more details soon! 🚀</p>
+                            <div class="bg-gray-200 dark:bg-gray-700 rounded-xl aspect-video flex items-center justify-center">
+                                <i class="fas fa-code text-4xl text-gray-400"></i>
+                            </div>
+                        </div>
+                        <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+                            <div class="flex items-center justify-between">
+                                <div class="flex space-x-6">
+                                    <button class="flex items-center text-gray-500 hover:text-red-500 transition-colors duration-200">
+                                        <i class="far fa-heart mr-2"></i>
+                                        <span>42</span>
+                                    </button>
+                                    <button class="flex items-center text-gray-500 hover:text-blue-500 transition-colors duration-200">
+                                        <i class="far fa-comment mr-2"></i>
+                                        <span>12</span>
+                                    </button>
+                                    <button class="flex items-center text-gray-500 hover:text-green-500 transition-colors duration-200">
+                                        <i class="fas fa-share mr-2"></i>
+                                        <span>Share</span>
+                                    </button>
+                                </div>
+                                <button class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+                                    <i class="far fa-bookmark"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Another Sample Post -->
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden">
+                        <div class="p-6">
+                            <div class="flex items-center mb-4">
+                                <div class="w-10 h-10 rounded-full bg-gray-300 dark:bg-gray-600 overflow-hidden">
+                                    <img src="https://via.placeholder.com/40x40" alt="Profile" class="w-full h-full object-cover">
+                                </div>
+                                <div class="ml-3 flex-1">
+                                    <h4 class="font-semibold text-gray-900 dark:text-white">John Doe</h4>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">1 day ago</p>
+                                </div>
+                                <button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                                    <i class="fas fa-ellipsis-h"></i>
+                                </button>
+                            </div>
+                            <p class="text-gray-700 dark:text-gray-300 mb-4">Beautiful morning at the local coffee shop! Nothing beats starting the day with a good cup of coffee and some coding. What's your favorite workspace? ☕</p>
+                        </div>
+                        <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+                            <div class="flex items-center justify-between">
+                                <div class="flex space-x-6">
+                                    <button class="flex items-center text-gray-500 hover:text-red-500 transition-colors duration-200">
+                                        <i class="far fa-heart mr-2"></i>
+                                        <span>28</span>
+                                    </button>
+                                    <button class="flex items-center text-gray-500 hover:text-blue-500 transition-colors duration-200">
+                                        <i class="far fa-comment mr-2"></i>
+                                        <span>7</span>
+                                    </button>
+                                    <button class="flex items-center text-gray-500 hover:text-green-500 transition-colors duration-200">
+                                        <i class="fas fa-share mr-2"></i>
+                                        <span>Share</span>
+                                    </button>
+                                </div>
+                                <button class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+                                    <i class="far fa-bookmark"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Photos Content (Hidden by default) -->
+                <div id="photosContent" class="hidden">
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                        <div class="aspect-square bg-gray-200 dark:bg-gray-700 rounded-xl overflow-hidden">
+                            <img src="https://via.placeholder.com/300x300" alt="Photo" class="w-full h-full object-cover">
+                        </div>
+                        <div class="aspect-square bg-gray-200 dark:bg-gray-700 rounded-xl overflow-hidden">
+                            <img src="https://via.placeholder.com/300x300" alt="Photo" class="w-full h-full object-cover">
+                        </div>
+                        <div class="aspect-square bg-gray-200 dark:bg-gray-700 rounded-xl overflow-hidden">
+                            <img src="https://via.placeholder.com/300x300" alt="Photo" class="w-full h-full object-cover">
+                        </div>
+                        <div class="aspect-square bg-gray-200 dark:bg-gray-700 rounded-xl overflow-hidden">
+                            <img src="https://via.placeholder.com/300x300" alt="Photo" class="w-full h-full object-cover">
+                        </div>
+                        <div class="aspect-square bg-gray-200 dark:bg-gray-700 rounded-xl overflow-hidden">
+                            <img src="https://via.placeholder.com/300x300" alt="Photo" class="w-full h-full object-cover">
+                        </div>
+                        <div class="aspect-square bg-gray-200 dark:bg-gray-700 rounded-xl overflow-hidden">
+                            <img src="https://via.placeholder.com/300x300" alt="Photo" class="w-full h-full object-cover">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Videos Content (Hidden by default) -->
+                <div id="videosContent" class="hidden">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <div class="bg-gray-200 dark:bg-gray-700 rounded-xl aspect-video flex items-center justify-center">
+                            <i class="fas fa-play text-4xl text-gray-400"></i>
+                        </div>
+                        <div class="bg-gray-200 dark:bg-gray-700 rounded-xl aspect-video flex items-center justify-center">
+                            <i class="fas fa-play text-4xl text-gray-400"></i>
+                        </div>
+                        <div class="bg-gray-200 dark:bg-gray-700 rounded-xl aspect-video flex items-center justify-center">
+                            <i class="fas fa-play text-4xl text-gray-400"></i>
+                        </div>
+                        <div class="bg-gray-200 dark:bg-gray-700 rounded-xl aspect-video flex items-center justify-center">
+                            <i class="fas fa-play text-4xl text-gray-400"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="profile.js"></script>
 </body>
 </html>
+

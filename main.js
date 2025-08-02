@@ -1,130 +1,187 @@
+// Main JavaScript file for index.html (Login/Signup page)
+import { authMethods, firestoreMethods, checkAuthAndRedirect } from './firebase-config.js';
+
+// DOM Elements
+const loginForm = document.getElementById('loginForm');
+const signupForm = document.getElementById('signupForm');
+const showSignupBtn = document.getElementById('showSignupForm');
+const showLoginBtn = document.getElementById('showLoginForm');
+const darkModeToggle = document.getElementById('darkModeToggle');
+
+// Initialize the page
 document.addEventListener('DOMContentLoaded', () => {
+    initializeDarkMode();
+    setupEventListeners();
+    checkAuthAndRedirect();
+});
 
-    // --- DOM Element Selectors ---
-    const showLoginBtn = document.getElementById('showLogin');
-    const showSignupBtn = document.getElementById('showSignup');
-    const loginContainer = document.getElementById('loginContainer');
-    const signupContainer = document.getElementById('signupContainer');
-    const loginForm = document.getElementById('loginForm');
-    const signupForm = document.getElementById('signupForm');
-    const loginError = document.getElementById('login-error');
-    const signupError = document.getElementById('signup-error');
-    const darkModeToggle = document.getElementById('darkModeToggle');
-    const moonIcon = document.getElementById('moonIcon');
-    const sunIcon = document.getElementById('sunIcon');
-    const passwordToggles = document.querySelectorAll('.password-toggle');
-    
-    // --- Icon SVGs ---
-    const eyeIconSVG = `
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-        </svg>`;
-    const eyeOffIconSVG = `
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7 1.274-4.057 5.064-7 9.542-7 .847 0 1.67.111 2.454.316M15 12a3 3 0 11-6 0 3 3 0 016 0zm6 2.292V12c0-1.141-.243-2.24-.68-3.228M21 12a9.999 9.999 0 00-1.085-4.223M3 3l18 18" />
-        </svg>`;
-
-    // --- Form Toggling ---
-    const showLogin = () => {
-        signupContainer.classList.add('hidden');
-        loginContainer.classList.remove('hidden');
-    };
-
-    const showSignup = () => {
-        loginContainer.classList.add('hidden');
-        signupContainer.classList.remove('hidden');
-    };
-
-    showLoginBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        showLogin();
-    });
-    
-    showSignupBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        showSignup();
-    });
-    
-    // --- Dark Mode ---
-    const applyTheme = (theme) => {
-        if (theme === 'dark') {
-            document.documentElement.classList.add('dark');
-            moonIcon.classList.add('hidden');
-            sunIcon.classList.remove('hidden');
-        } else {
-            document.documentElement.classList.remove('dark');
-            moonIcon.classList.remove('hidden');
-            sunIcon.classList.add('hidden');
-        }
-    };
-    
-    // Check for saved theme in localStorage
+// Dark mode functionality
+function initializeDarkMode() {
     const savedTheme = localStorage.getItem('theme');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+        updateDarkModeIcon(true);
+    }
+}
+
+function toggleDarkMode() {
+    const isDark = document.documentElement.classList.toggle('dark');
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    updateDarkModeIcon(isDark);
+}
+
+function updateDarkModeIcon(isDark) {
+    const icon = darkModeToggle.querySelector('i');
+    icon.className = isDark ? 'fas fa-sun text-gray-300' : 'fas fa-moon text-gray-600';
+}
+
+// Event listeners
+function setupEventListeners() {
+    // Dark mode toggle
+    darkModeToggle.addEventListener('click', toggleDarkMode);
     
-    if (savedTheme) {
-        applyTheme(savedTheme);
-    } else {
-        applyTheme(prefersDark ? 'dark' : 'light');
+    // Form toggles
+    showSignupBtn.addEventListener('click', showSignupForm);
+    showLoginBtn.addEventListener('click', showLoginForm);
+    
+    // Form submissions
+    loginForm.addEventListener('submit', handleLogin);
+    signupForm.addEventListener('submit', handleSignup);
+}
+
+// Form display functions
+function showSignupForm() {
+    loginForm.classList.add('hidden');
+    signupForm.classList.remove('hidden');
+}
+
+function showLoginForm() {
+    signupForm.classList.add('hidden');
+    loginForm.classList.remove('hidden');
+}
+
+// Authentication handlers
+async function handleLogin(e) {
+    e.preventDefault();
+    
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
+    const loginBtn = document.getElementById('loginBtn');
+    
+    try {
+        // Show loading state
+        loginBtn.textContent = 'Signing In...';
+        loginBtn.disabled = true;
+        
+        // TODO: Implement actual Firebase authentication
+        const userCredential = await authMethods.signIn(email, password);
+        
+        // Success - redirect to home
+        window.location.href = 'home.html';
+        
+    } catch (error) {
+        console.error('Login error:', error);
+        showErrorMessage('Invalid email or password. Please try again.');
+    } finally {
+        // Reset button state
+        loginBtn.textContent = 'Sign In';
+        loginBtn.disabled = false;
+    }
+}
+
+async function handleSignup(e) {
+    e.preventDefault();
+    
+    const firstName = document.getElementById('signupFirstName').value;
+    const lastName = document.getElementById('signupLastName').value;
+    const email = document.getElementById('signupEmail').value;
+    const password = document.getElementById('signupPassword').value;
+    const confirmPassword = document.getElementById('signupConfirmPassword').value;
+    const signupBtn = document.getElementById('signupBtn');
+    
+    // Validate passwords match
+    if (password !== confirmPassword) {
+        showErrorMessage('Passwords do not match.');
+        return;
     }
     
-    darkModeToggle.addEventListener('click', () => {
-        const isDark = document.documentElement.classList.contains('dark');
-        const newTheme = isDark ? 'light' : 'dark';
-        localStorage.setItem('theme', newTheme);
-        applyTheme(newTheme);
-    });
+    try {
+        // Show loading state
+        signupBtn.textContent = 'Creating Account...';
+        signupBtn.disabled = true;
+        
+        // TODO: Implement actual Firebase authentication
+        const userCredential = await authMethods.signUp(email, password);
+        
+        // Create user profile in Firestore
+        const userData = {
+            firstName,
+            lastName,
+            email,
+            displayName: `${firstName} ${lastName}`,
+            bio: '',
+            profilePicture: '',
+            createdAt: new Date().toISOString(),
+            followers: 0,
+            following: 0,
+            posts: 0
+        };
+        
+        await firestoreMethods.createUserProfile(userCredential.user.uid, userData);
+        
+        // Success - redirect to home
+        window.location.href = 'home.html';
+        
+    } catch (error) {
+        console.error('Signup error:', error);
+        showErrorMessage('Failed to create account. Please try again.');
+    } finally {
+        // Reset button state
+        signupBtn.textContent = 'Create Account';
+        signupBtn.disabled = false;
+    }
+}
 
-    // --- Password Visibility ---
-    passwordToggles.forEach(toggle => {
-        // Initialize with the eye icon
-        toggle.innerHTML = eyeIconSVG;
+// Utility functions
+function showErrorMessage(message) {
+    // Create and show error message
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+    errorDiv.textContent = message;
+    
+    document.body.appendChild(errorDiv);
+    
+    // Remove error message after 5 seconds
+    setTimeout(() => {
+        errorDiv.remove();
+    }, 5000);
+}
 
-        toggle.addEventListener('click', () => {
-            const targetInputId = toggle.getAttribute('data-target');
-            const passwordInput = document.getElementById(targetInputId);
-            
-            if (passwordInput.type === 'password') {
-                passwordInput.type = 'text';
-                toggle.innerHTML = eyeOffIconSVG;
-            } else {
-                passwordInput.type = 'password';
-                toggle.innerHTML = eyeIconSVG;
-            }
-        });
-    });
+function showSuccessMessage(message) {
+    // Create and show success message
+    const successDiv = document.createElement('div');
+    successDiv.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+    successDiv.textContent = message;
+    
+    document.body.appendChild(successDiv);
+    
+    // Remove success message after 5 seconds
+    setTimeout(() => {
+        successDiv.remove();
+    }, 5000);
+}
 
-    // --- Form Validation ---
-    const validateForm = (form, errorElement) => {
-        errorElement.textContent = '';
-        errorElement.classList.add('hidden');
+// For development/testing - remove in production
+window.testLogin = () => {
+    document.getElementById('loginEmail').value = 'test@example.com';
+    document.getElementById('loginPassword').value = 'password123';
+};
 
-        let isValid = true;
-        const inputs = form.querySelectorAll('input[required]');
+window.testSignup = () => {
+    document.getElementById('signupFirstName').value = 'John';
+    document.getElementById('signupLastName').value = 'Doe';
+    document.getElementById('signupEmail').value = 'john@example.com';
+    document.getElementById('signupPassword').value = 'password123';
+    document.getElementById('signupConfirmPassword').value = 'password123';
+};
 
-        inputs.forEach(input => {
-            // Reset border color
-            input.classList.remove('border-red-500', 'focus:ring-red-500');
-            input.classList.add('border-gray-300', 'focus:ring-indigo-500');
-
-            if (!input.value.trim()) {
-                isValid = false;
-                errorElement.textContent = 'Please fill out all required fields.';
-                input.classList.add('border-red-500', 'focus:ring-red-500');
-                input.classList.remove('border-gray-300', 'focus:ring-indigo-500');
-            } else if (input.type === 'email' && !/^\S+@\S+\.\S+$/.test(input.value)) {
-                 isValid = false;
-                 errorElement.textContent = 'Please enter a valid email address.';
-                 input.classList.add('border-red-500', 'focus:ring-red-500');
-                 input.classList.remove('border-gray-300', 'focus:ring-indigo-500');
-            }
-        });
-
-        if (!isValid) {
-            errorElement.classList.remove('hidden');
-        }
-
-        return isValid;
-    };
-  })();
