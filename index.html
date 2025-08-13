@@ -2,131 +2,331 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AMIGO - Connect & Share</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    fontFamily: {
-                        'cal-sans': ['Cal Sans', 'ui-sans-serif', 'system-ui'],
-                        'noto-sans': ['Noto Sans', 'ui-sans-serif', 'system-ui']
-                    }
-                }
-            }
-        }
-    </script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <title>Markaz il Ginna - Student Portal</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
-<body class="bg-gray-50 dark:bg-gray-900 font-noto-sans transition-colors duration-300">
-    <!-- Dark mode toggle -->
-    <div class="absolute top-4 right-4 z-10">
-        <button id="darkModeToggle" class="p-2 rounded-full bg-white dark:bg-gray-800 shadow-lg hover:shadow-xl transition-all duration-300">
-            <i class="fas fa-moon text-gray-600 dark:text-gray-300"></i>
-        </button>
-    </div>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1 class="logo">Markaz il Ginna</h1>
+                <span class="demo-pill">Demo (Frontend Only)</span>
+            </div>
+        </header>
 
-    <div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <div class="max-w-md w-full space-y-8">
-            <!-- Logo and Header -->
-            <div class="text-center">
-                <div class="flex justify-center mb-6">
-                    <div class="bg-gradient-to-r from-blue-500 to-purple-600 w-20 h-20 rounded-2xl flex items-center justify-center shadow-2xl">
-                        <span class="text-white text-2xl font-bold">A</span>
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Landing Page -->
+            <div id="landing-page" class="page active">
+                <div class="landing-container">
+                    <h2 class="page-title">Student Portal</h2>
+                    <div class="button-group">
+                        <button onclick="showStudentLogin()" class="btn btn-primary">Student</button>
+                        <button onclick="showAdminLogin()" class="btn btn-outline">Admin</button>
                     </div>
                 </div>
-                <h1 class="text-4xl font-bold text-gray-900 dark:text-white mb-2">AMIGO</h1>
-                <p class="text-gray-600 dark:text-gray-400">Connect, Share, Discover</p>
             </div>
 
-            <!-- Auth Container -->
-            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 transition-all duration-300">
-                <!-- Login Form -->
-                <form id="loginForm" class="space-y-6">
-                    <div class="text-center mb-6">
-                        <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">Welcome Back</h2>
-                        <p class="text-gray-600 dark:text-gray-400 mt-2">Sign in to your account</p>
+            <!-- Student Login -->
+            <div id="student-page" class="page">
+                <div class="page-container">
+                    <div class="page-header">
+                        <button onclick="showLanding()" class="btn-back">← Back</button>
+                        <h2 class="page-title">Student Lookup</h2>
                     </div>
-
-                    <div class="space-y-4">
-                        <div>
-                            <label for="loginEmail" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email</label>
-                            <input type="email" id="loginEmail" required 
-                                   class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-all duration-200">
-                        </div>
-                        <div>
-                            <label for="loginPassword" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Password</label>
-                            <input type="password" id="loginPassword" required 
-                                   class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-all duration-200">
-                        </div>
-                    </div>
-
-                    <button type="submit" id="loginBtn" 
-                            class="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 px-4 rounded-lg font-medium hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl">
-                        Sign In
-                    </button>
-
-                    <div class="text-center">
-                        <button type="button" id="showSignupForm" class="text-blue-500 hover:text-blue-600 font-medium">
-                            Don't have an account? Sign up
-                        </button>
-                    </div>
-                </form>
-
-                <!-- Signup Form -->
-                <form id="signupForm" class="space-y-6 hidden">
-                    <div class="text-center mb-6">
-                        <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">Create Account</h2>
-                        <p class="text-gray-600 dark:text-gray-400 mt-2">Join the AMIGO community</p>
-                    </div>
-
-                    <div class="space-y-4">
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label for="signupFirstName" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">First Name</label>
-                                <input type="text" id="signupFirstName" required 
-                                       class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-all duration-200">
+                    
+                    <div class="card">
+                        <form id="student-form" onsubmit="lookupStudent(event)">
+                            <div class="form-group">
+                                <label for="student-id">Student ID</label>
+                                <input type="text" id="student-id" placeholder="MIG-2025-001" required>
                             </div>
-                            <div>
-                                <label for="signupLastName" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Last Name</label>
-                                <input type="text" id="signupLastName" required 
-                                       class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-all duration-200">
+                            <button type="submit" class="btn btn-primary">Lookup</button>
+                        </form>
+                        
+                        <div id="student-error" class="error-message"></div>
+                    </div>
+
+                    <!-- Student Profile (hidden initially) -->
+                    <div id="student-profile" class="student-profile" style="display: none;">
+                        <div class="card">
+                            <h3>Profile</h3>
+                            <div class="profile-info">
+                                <p><strong>Name:</strong> <span id="student-name"></span></p>
+                                <p><strong>Class:</strong> <span id="student-class"></span></p>
                             </div>
                         </div>
-                        <div>
-                            <label for="signupEmail" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email</label>
-                            <input type="email" id="signupEmail" required 
-                                   class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-all duration-200">
+
+                        <div class="card">
+                            <h3>Fees (₦) <span class="arabic-label">الرسوم</span></h3>
+                            <div class="fees-info">
+                                <div class="fees-row">
+                                    <span>Fee Amount:</span>
+                                    <span id="fee-amount"></span>
+                                </div>
+                                <div class="fees-row">
+                                    <span>Paid:</span>
+                                    <span id="fee-paid"></span>
+                                </div>
+                                <div class="fees-row">
+                                    <span>Outstanding:</span>
+                                    <span id="fee-outstanding"></span>
+                                </div>
+                                <div class="status-pill" id="fee-status"></div>
+                            </div>
                         </div>
-                        <div>
-                            <label for="signupPassword" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Password</label>
-                            <input type="password" id="signupPassword" required 
-                                   class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-all duration-200">
+
+                        <div class="card">
+                            <h3>Results <span class="arabic-label">نتيجة الطالب</span></h3>
+                            <div class="table-container">
+                                <table id="results-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Subject</th>
+                                            <th>CA(40)</th>
+                                            <th>Exam(60)</th>
+                                            <th>Total</th>
+                                            <th>Grade</th>
+                                            <th>Date</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="results-tbody">
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
-                        <div>
-                            <label for="signupConfirmPassword" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Confirm Password</label>
-                            <input type="password" id="signupConfirmPassword" required 
-                                   class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-all duration-200">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin Login -->
+            <div id="admin-login-page" class="page">
+                <div class="page-container">
+                    <div class="page-header">
+                        <button onclick="showLanding()" class="btn-back">← Back</button>
+                        <h2 class="page-title">Admin Login</h2>
+                    </div>
+                    
+                    <div class="card">
+                        <form id="admin-form" onsubmit="adminLogin(event)">
+                            <div class="form-group">
+                                <label for="admin-email">Email</label>
+                                <input type="email" id="admin-email" placeholder="admin@markaz.com" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="admin-password">Password</label>
+                                <input type="password" id="admin-password" placeholder="Enter password" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Sign In</button>
+                        </form>
+                        
+                        <div id="admin-error" class="error-message"></div>
+                        <p class="hint">Hint: Use admin@markaz.com / admin123</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin Dashboard -->
+            <div id="admin-dashboard" class="page">
+                <div class="page-container">
+                    <div class="page-header">
+                        <button onclick="adminLogout()" class="btn-back">← Logout</button>
+                        <h2 class="page-title">Admin Dashboard</h2>
+                    </div>
+
+                    <!-- Tabs -->
+                    <div class="tabs">
+                        <button class="tab-btn active" onclick="showTab('register')">Register Student</button>
+                        <button class="tab-btn" onclick="showTab('results')">Record Results</button>
+                        <button class="tab-btn" onclick="showTab('students')">Students List</button>
+                        <button class="tab-btn" onclick="showTab('receipt')">Receipt</button>
+                    </div>
+
+                    <!-- Register Student Tab -->
+                    <div id="register-tab" class="tab-content active">
+                        <div class="card">
+                            <h3>Register Student</h3>
+                            <form id="register-form" onsubmit="registerStudent(event)">
+                                <div class="form-group">
+                                    <label for="reg-id">Student ID</label>
+                                    <input type="text" id="reg-id" placeholder="MIG-2025-003" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="reg-name">Name</label>
+                                    <input type="text" id="reg-name" placeholder="Student Name" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="reg-class">Class</label>
+                                    <select id="reg-class" required>
+                                        <option value="">Select Class</option>
+                                        <option value="Arabic 1">Arabic 1</option>
+                                        <option value="Arabic 2">Arabic 2</option>
+                                        <option value="Tahfeedh 1">Tahfeedh 1</option>
+                                        <option value="Tahfeedh 2">Tahfeedh 2</option>
+                                        <option value="Tahfeedh 3">Tahfeedh 3</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="reg-fee">Fee (₦)</label>
+                                    <input type="number" id="reg-fee" placeholder="25000" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Register Student</button>
+                            </form>
                         </div>
                     </div>
 
-                    <button type="submit" id="signupBtn" 
-                            class="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 px-4 rounded-lg font-medium hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl">
-                        Create Account
-                    </button>
+                    <!-- Record Results Tab -->
+                    <div id="results-tab" class="tab-content">
+                        <div class="card">
+                            <h3>Record Results</h3>
+                            <form id="results-form" onsubmit="recordResults(event)">
+                                <div class="form-group">
+                                    <label for="result-student-id">Student ID</label>
+                                    <input type="text" id="result-student-id" placeholder="MIG-2025-001" list="students-list" required>
+                                    <datalist id="students-list"></datalist>
+                                </div>
+                                <div class="form-group">
+                                    <label for="result-subject">Subject</label>
+                                    <input type="text" id="result-subject" placeholder="Tajweed" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="result-ca">CA Score (0-40)</label>
+                                    <input type="number" id="result-ca" min="0" max="40" placeholder="30" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="result-exam">Exam Score (0-60)</label>
+                                    <input type="number" id="result-exam" min="0" max="60" placeholder="50" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Record Results</button>
+                            </form>
+                        </div>
+                    </div>
 
-                    <div class="text-center">
-                        <button type="button" id="showLoginForm" class="text-blue-500 hover:text-blue-600 font-medium">
-                            Already have an account? Sign in
-                        </button>
+                    <!-- Students List Tab -->
+                    <div id="students-tab" class="tab-content">
+                        <div class="card">
+                            <h3>Students List</h3>
+                            <div class="table-container">
+                                <table id="students-table">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Name</th>
+                                            <th>Class</th>
+                                            <th>Fee</th>
+                                            <th>Paid</th>
+                                            <th>Outstanding</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="students-tbody">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Receipt Tab -->
+                    <div id="receipt-tab" class="tab-content">
+                        <div class="card">
+                            <h3>Generate Receipt</h3>
+                            <form id="receipt-form" onsubmit="generateReceipt(event)">
+                                <div class="form-group">
+                                    <label for="receipt-student-id">Student ID</label>
+                                    <input type="text" id="receipt-student-id" placeholder="MIG-2025-001" list="students-list-receipt" required>
+                                    <datalist id="students-list-receipt"></datalist>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Generate Receipt</button>
+                            </form>
+                        </div>
+
+                        <div id="receipt-view" class="receipt-view" style="display: none;">
+                            <div class="receipt-card">
+                                <div class="receipt-header">
+                                    <h2>Markaz il Ginna</h2>
+                                    <p class="receipt-date" id="receipt-date"></p>
+                                    <div class="watermark">MIG</div>
+                                </div>
+                                
+                                <div class="receipt-body">
+                                    <div class="receipt-section">
+                                        <h3>Student Information</h3>
+                                        <p><strong>ID:</strong> <span id="receipt-id"></span></p>
+                                        <p><strong>Name:</strong> <span id="receipt-name"></span></p>
+                                        <p><strong>Class:</strong> <span id="receipt-class"></span></p>
+                                    </div>
+
+                                    <div class="receipt-section">
+                                        <h3>Fees Summary</h3>
+                                        <div class="fees-row">
+                                            <span>Total Fee:</span>
+                                            <span id="receipt-fee"></span>
+                                        </div>
+                                        <div class="fees-row">
+                                            <span>Amount Paid:</span>
+                                            <span id="receipt-paid"></span>
+                                        </div>
+                                        <div class="fees-row">
+                                            <span>Outstanding:</span>
+                                            <span id="receipt-outstanding"></span>
+                                        </div>
+                                    </div>
+
+                                    <div class="receipt-section">
+                                        <h3>Latest Result</h3>
+                                        <div id="receipt-result"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <button onclick="printReceipt()" class="btn btn-primary print-btn">Print Receipt</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Edit Student Modal -->
+        <div id="edit-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Edit Student</h3>
+                    <button onclick="closeEditModal()" class="close-btn">&times;</button>
+                </div>
+                <form id="edit-form" onsubmit="saveStudentEdit(event)">
+                    <div class="form-group">
+                        <label for="edit-name">Name</label>
+                        <input type="text" id="edit-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-class">Class</label>
+                        <select id="edit-class" required>
+                            <option value="">Select Class</option>
+                            <option value="Arabic 1">Arabic 1</option>
+                            <option value="Arabic 2">Arabic 2</option>
+                            <option value="Tahfeedh 1">Tahfeedh 1</option>
+                            <option value="Tahfeedh 2">Tahfeedh 2</option>
+                            <option value="Tahfeedh 3">Tahfeedh 3</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-fee">Fee (₦)</label>
+                        <input type="number" id="edit-fee" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-paid">Paid (₦)</label>
+                        <input type="number" id="edit-paid" required>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" onclick="closeEditModal()" class="btn btn-outline">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 
-    <script type="module" src="main.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
