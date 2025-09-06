@@ -10,8 +10,8 @@
         <!-- Header -->
         <header class="header">
             <div class="header-content">
-                <h1 class="logo">Markaz il Ginna</h1>
-                <span class="demo-pill">Demo (Frontend Only)</span>
+                <h1 class="logo">Markaz ul Ginna</h1>
+                <span class="demo-pill">First Edition</span>
             </div>
         </header>
 
@@ -122,7 +122,7 @@
                         </form>
                         
                         <div id="admin-error" class="error-message"></div>
-                        <p class="hint">Hint: Use admin@markaz.com / admin123</p>
+                        <p class="hint">Hint</p>
                     </div>
                 </div>
             </div>
@@ -150,7 +150,7 @@
                             <form id="register-form" onsubmit="registerStudent(event)">
                                 <div class="form-group">
                                     <label for="reg-id">Student ID</label>
-                                    <input type="text" id="reg-id" placeholder="MIG-2025-003" required>
+                                    <input type="text" id="reg-id" placeholder="MIG-2025-001" required>
                                 </div>
                                 <div class="form-group">
                                     <label for="reg-name">Name</label>
@@ -301,14 +301,15 @@
                     </div>
                     <div class="form-group">
                         <label for="edit-class">Class</label>
-                        <select id="edit-class" required>
-                            <option value="">Select Class</option>
-                            <option value="Arabic 1">Arabic 1</option>
-                            <option value="Arabic 2">Arabic 2</option>
-                            <option value="Tahfeedh 1">Tahfeedh 1</option>
-                            <option value="Tahfeedh 2">Tahfeedh 2</option>
-                            <option value="Tahfeedh 3">Tahfeedh 3</option>
-                        </select>
+  <select id="reg-class">
+  <option value="First Year Preparatory">Al-Awwal Al-I‘dādī – First Year Preparatory</option>
+  <option value="Second Year Preparatory">Ath-Thānī Al-I‘dādī – Second Year Preparatory</option>
+  <option value="Third Year Preparatory">Ath-Thālith Al-I‘dādī – Third Year Preparatory</option>
+  <option value="First Year Secondary">Al-Awwal Ath-Thanawī – First Year Secondary</option>
+  <option value="Second Year Secondary">Ath-Thānī Ath-Thanawī – Second Year Secondary</option>
+  <option value="Third Year Secondary">Ath-Thālith Ath-Thanawī – Third Year Secondary</option>
+</select>
+
                     </div>
                     <div class="form-group">
                         <label for="edit-fee">Fee (₦)</label>
