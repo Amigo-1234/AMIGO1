@@ -1,18 +1,18 @@
 :root {
-    --primary-green: #0b7a42;
-    --primary-green-dark: #065c32;
-    --primary-green-light: #10b981;
+    --primary-green: #15803d;
+    --primary-green-dark: #166534;
+    --primary-green-light: #22c55e;
     --text-primary: #1a1a1a;
     --text-secondary: #666;
     --bg-primary: #ffffff;
     --bg-secondary: #f8f9fa;
-    --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --bg-gradient: linear-gradient(135deg, #15803d 0%, #16a34a 100%);
     --bg-glass: rgba(255, 255, 255, 0.25);
     --bg-glass-dark: rgba(255, 255, 255, 0.1);
     --border-color: #e1e5e9;
-    --shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.1);
-    --shadow-hover: 0 12px 40px rgba(0, 0, 0, 0.15);
+    --shadow: 0 2px 10px rgba(21, 128, 61, 0.1);
+    --shadow-card: 0 8px 32px rgba(21, 128, 61, 0.15);
+    --shadow-hover: 0 12px 40px rgba(21, 128, 61, 0.2);
     --border-radius: 12px;
     --border-radius-lg: 20px;
 }
@@ -190,14 +190,14 @@ body {
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, var(--primary-green), var(--primary-green-light));
+    background: linear-gradient(135deg, #15803d, #22c55e);
     color: white;
-    box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+    box-shadow: 0 8px 25px rgba(34, 197, 94, 0.4);
 }
 
 .btn-primary:hover {
     transform: translateY(-3px);
-    box-shadow: 0 15px 35px rgba(16, 185, 129, 0.6);
+    box-shadow: 0 15px 35px rgba(34, 197, 94, 0.6);
 }
 
 .btn-outline {
@@ -255,14 +255,14 @@ body {
     border-radius: var(--border-radius-lg);
     padding: 2rem;
     margin-bottom: 2rem;
-    box-shadow: var(--shadow-card);
+    box-shadow: 0 8px 32px rgba(21, 128, 61, 0.15);
     border: 1px solid rgba(255, 255, 255, 0.2);
     transition: all 0.3s ease;
 }
 
 .card:hover {
-    transform: translateY(-5px);
-    box-shadow: var(--shadow-hover);
+    border-color: rgba(34, 197, 94, 0.3);
+    box-shadow: 0 12px 40px rgba(21, 128, 61, 0.25);
 }
 
 .card h3 {
@@ -375,7 +375,7 @@ body {
 }
 
 .status-pill.paid {
-    background: linear-gradient(135deg, #10b981, #059669);
+    background: linear-gradient(135deg, #15803d, #16a34a);
     color: white;
 }
 
@@ -467,8 +467,8 @@ tbody tr:hover {
 
 .tab-btn.active {
     color: white;
-    background: linear-gradient(135deg, var(--primary-green), var(--primary-green-light));
-    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+    background: linear-gradient(135deg, #15803d, #22c55e);
+    box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3);
 }
 
 .tab-btn:hover:not(.active) {
@@ -588,7 +588,7 @@ tbody tr:hover {
 }
 
 .receipt-header h2 {
-    color: var(--primary-green);
+    color: #15803d;
     margin-bottom: 0.5rem;
     font-weight: 800;
 }
@@ -605,7 +605,7 @@ tbody tr:hover {
     transform: translate(-50%, -50%) rotate(-45deg);
     font-size: 8rem;
     font-weight: 900;
-    color: rgba(11, 122, 66, 0.03);
+    color: rgba(21, 128, 61, 0.03);
     z-index: 0;
     pointer-events: none;
 }
@@ -620,7 +620,7 @@ tbody tr:hover {
 }
 
 .receipt-section h3 {
-    color: var(--primary-green);
+    color: #15803d;
     margin-bottom: 0.75rem;
     font-size: 1.125rem;
     font-weight: 700;
@@ -655,7 +655,7 @@ tbody tr:hover {
     }
     
     .watermark {
-        color: rgba(11, 122, 66, 0.1) !important;
+        color: rgba(21, 128, 61, 0.1) !important;
     }
 }
 
