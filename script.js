@@ -22,8 +22,34 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db   = getFirestore(app);
-
 console.log("Firebase connected:", firebaseConfig.projectId);
+
+// -------------------------------
+// New class system (source of truth)
+// -------------------------------
+const CLASS_OPTIONS = [
+  { value: "First Year Preparatory",  label: "Al-Awwal Al-I‘dādī – First Year Preparatory" },
+  { value: "Second Year Preparatory", label: "Ath-Thānī Al-I‘dādī – Second Year Preparatory" },
+  { value: "Third Year Preparatory",  label: "Ath-Thālith Al-I‘dādī – Third Year Preparatory" },
+  { value: "First Year Secondary",    label: "Al-Awwal Ath-Thanawī – First Year Secondary" },
+  { value: "Second Year Secondary",   label: "Ath-Thānī Ath-Thanawī – Second Year Secondary" },
+  { value: "Third Year Secondary",    label: "Ath-Thālith Ath-Thanawī – Third Year Secondary" }
+];
+const CLASS_MAP = Object.fromEntries(CLASS_OPTIONS.map(o => [o.value, o.label]));
+function populateClassSelects() {
+  const build = () =>
+    CLASS_OPTIONS.map(o => `<option value="${o.value}">${o.label}</option>`).join("");
+  const reg = document.getElementById("reg-class");
+  const edit = document.getElementById("edit-class");
+  if (reg) reg.innerHTML = build();
+  if (edit) edit.innerHTML = build();
+}
+function isValidClass(value) {
+  return CLASS_OPTIONS.some(o => o.value === value);
+}
+function displayClass(value) {
+  return CLASS_MAP[value] || value || "";
+}
 
 // -------------------------------
 // Session state
@@ -33,9 +59,11 @@ let currentAdmin = null;           // { uid, name, role, active }
 let currentEditingStudentId = null;
 
 // -------------------------------
-// Boot (Auth-aware)
+/* Boot (Auth-aware) */
 // -------------------------------
 document.addEventListener('DOMContentLoaded', () => {
+  populateClassSelects();
+
   onAuthStateChanged(auth, async (user) => {
     if (user) {
       try {
@@ -184,7 +212,7 @@ async function lookupStudent(event) {
 function showStudentProfile(student, results = []) {
   // info
   document.getElementById('student-name').textContent  = student.name ?? '';
-  document.getElementById('student-class').textContent = student.class ?? '';
+  document.getElementById('student-class').textContent = displayClass(student.class);
 
   // fees
   const fee  = Number(student.fee)  || 0;
@@ -222,7 +250,7 @@ function showStudentProfile(student, results = []) {
 }
 
 // -------------------------------
-// Register student (any active admin)
+// Register student (any active admin) — uses new class list
 // -------------------------------
 async function registerStudent(event) {
   event.preventDefault();
@@ -236,6 +264,10 @@ async function registerStudent(event) {
     alert('Please fill all fields.');
     return;
   }
+  if (!isValidClass(className)) {
+    alert('Please select a valid class from the list.');
+    return;
+  }
   if (fee < 0) fee = 0;
 
   const ref  = doc(db, "students", id);
@@ -246,12 +278,17 @@ async function registerStudent(event) {
   }
 
   await setDoc(ref, {
-    id, name, class: className, fee, paid: 0,
+    id,
+    name,
+    class: className, // saved as the standardized English value
+    fee,
+    paid: 0,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp()
   });
 
   document.getElementById('register-form').reset();
+  populateClassSelects(); // keep selects fresh if page re-renders
   await updateStudentsAutocomplete();
   await updateStudentsTable();
   alert('Student registered successfully!');
@@ -284,7 +321,6 @@ async function recordResults(event) {
     return;
   }
 
-  // ensure student exists
   const sRef = doc(db, "students", studentId);
   const sSnap = await getDoc(sRef);
   if (!sSnap.exists()) {
@@ -346,7 +382,7 @@ async function updateStudentsTable() {
     tr.innerHTML = `
       <td>${s.id}</td>
       <td>${s.name}</td>
-      <td>${s.class}</td>
+      <td>${displayClass(s.class)}</td>
       <td>₦${fee.toLocaleString()}</td>
       <td>₦${paid.toLocaleString()}</td>
       <td>₦${outstanding.toLocaleString()}</td>
@@ -383,7 +419,7 @@ async function editStudent(studentId) {
   currentEditingStudentId = studentId;
 
   document.getElementById('edit-name').value  = s.name || '';
-  document.getElementById('edit-class').value = s.class || '';
+  document.getElementById('edit-class').value = isValidClass(s.class) ? s.class : CLASS_OPTIONS[0].value;
   document.getElementById('edit-fee').value   = Number(s.fee) || 0;
   document.getElementById('edit-paid').value  = Number(s.paid) || 0;
 
@@ -402,6 +438,10 @@ async function saveStudentEdit(event) {
   let fee  = parseInt(document.getElementById('edit-fee').value);
   let paid = parseInt(document.getElementById('edit-paid').value);
 
+  if (!isValidClass(cls)) {
+    alert('Please select a valid class from the list.');
+    return;
+  }
   fee  = isNaN(fee)  ? 0 : fee;
   paid = isNaN(paid) ? 0 : paid;
   if (fee < 0) fee = 0;
@@ -463,7 +503,7 @@ function showReceiptView(student, latestResult = null) {
   document.getElementById('receipt-date').textContent = new Date().toLocaleString('en-NG', { dateStyle: 'medium', timeStyle: 'short' });
   document.getElementById('receipt-id').textContent   = student.id;
   document.getElementById('receipt-name').textContent = student.name;
-  document.getElementById('receipt-class').textContent= student.class;
+  document.getElementById('receipt-class').textContent= displayClass(student.class);
   document.getElementById('receipt-fee').textContent  = `₦${fee.toLocaleString()}`;
   document.getElementById('receipt-paid').textContent = `₦${paid.toLocaleString()}`;
   document.getElementById('receipt-outstanding').textContent = `₦${outstanding.toLocaleString()}`;
