@@ -29,7 +29,7 @@ console.log("Firebase connected:", firebaseConfig.projectId);
 // Session state
 // -------------------------------
 let isAdminLoggedIn = false;
-let currentAdmin = null;           // { uid, name, role, allowedClasses: [], active: true }
+let currentAdmin = null;           // { uid, name, role, active }
 let currentEditingStudentId = null;
 
 // -------------------------------
@@ -38,18 +38,23 @@ let currentEditingStudentId = null;
 document.addEventListener('DOMContentLoaded', () => {
   onAuthStateChanged(auth, async (user) => {
     if (user) {
-      const adminDoc = await getDoc(doc(db, "admins", user.uid));
-      if (adminDoc.exists() && adminDoc.data().active === true) {
-        currentAdmin = { uid: user.uid, ...adminDoc.data() };
-        isAdminLoggedIn = true;
-        showAdminDashboard();
-        await updateStudentsTable();
-        await updateStudentsAutocomplete();
-        // Optional: show ustaz name somewhere if you have an element
-        const ustazEl = document.getElementById('ustaz-name');
-        if (ustazEl) ustazEl.textContent = currentAdmin.name || "Ustaz";
-        return;
-      } else {
+      try {
+        const adminDoc = await getDoc(doc(db, "admins", user.uid));
+        if (adminDoc.exists() && adminDoc.data().active === true) {
+          currentAdmin = { uid: user.uid, ...adminDoc.data() };
+          isAdminLoggedIn = true;
+          showAdminDashboard();
+          await updateStudentsTable();
+          await updateStudentsAutocomplete();
+          const ustazEl = document.getElementById('ustaz-name');
+          if (ustazEl) ustazEl.textContent = currentAdmin.name || "Ustaz";
+          return;
+        } else {
+          console.warn("Signed in but no active admin doc for UID:", user.uid);
+          await signOut(auth);
+        }
+      } catch (err) {
+        console.error("Admin doc read error:", err);
         await signOut(auth);
       }
     }
@@ -59,14 +64,6 @@ document.addEventListener('DOMContentLoaded', () => {
     showAdminLogin();
   });
 });
-
-// -------------------------------
-// Helper: local role gate
-// -------------------------------
-function canWriteClassLocally(className) {
-  if (!currentAdmin || !Array.isArray(currentAdmin.allowedClasses)) return false;
-  return currentAdmin.allowedClasses.includes(className);
-}
 
 // -------------------------------
 // Navigation
@@ -97,12 +94,6 @@ function showAdminDashboard() {
   showTab('register'); // default tab
   updateStudentsTable();
   updateStudentsAutocomplete();
-
-  // If you have a "classes this ustaz can manage" hint area:
-  const classesEl = document.getElementById('ustaz-classes');
-  if (classesEl && currentAdmin?.allowedClasses?.length) {
-    classesEl.textContent = currentAdmin.allowedClasses.join(", ");
-  }
 }
 
 // -------------------------------
@@ -115,25 +106,25 @@ async function adminLogin(event) {
 
   try {
     const cred = await signInWithEmailAndPassword(auth, email, password);
-    const adminDoc = await getDoc(doc(db, "admins", cred.user.uid));
+    const adminRef = doc(db, "admins", cred.user.uid);
+    const adminDoc = await getDoc(adminRef);
     if (!adminDoc.exists() || adminDoc.data().active !== true) {
       await signOut(auth);
-      throw new Error("Your admin access is not active. Contact the owner.");
+      throw new Error("No active admin profile. Create admins/" + cred.user.uid + " with { active: true }");
     }
     currentAdmin = { uid: cred.user.uid, ...adminDoc.data() };
     isAdminLoggedIn = true;
-    localStorage.setItem('markazAdminSession', 'true'); // optional UI flag
     showAdminDashboard();
     hideError('admin-error');
   } catch (e) {
-    showError('admin-error', e.message || 'Login failed.');
+    console.error("Login error:", e);
+    showError('admin-error', (e.code || 'auth/error') + ' — ' + (e.message || 'Login failed.'));
   }
 }
 async function adminLogout() {
   await signOut(auth);
   isAdminLoggedIn = false;
   currentAdmin = null;
-  localStorage.removeItem('markazAdminSession');
   showLanding();
 }
 
@@ -169,7 +160,7 @@ document.addEventListener('click', (event) => {
 });
 
 // -------------------------------
-/* Student lookup (public read by default; change rules if needed) */
+// Student lookup (public read by default)
 // -------------------------------
 async function lookupStudent(event) {
   event.preventDefault();
@@ -231,7 +222,7 @@ function showStudentProfile(student, results = []) {
 }
 
 // -------------------------------
-// Register student (admins; role-limited by class)
+// Register student (any active admin)
 // -------------------------------
 async function registerStudent(event) {
   event.preventDefault();
@@ -243,10 +234,6 @@ async function registerStudent(event) {
 
   if (!id || !name || !className || isNaN(fee)) {
     alert('Please fill all fields.');
-    return;
-  }
-  if (!canWriteClassLocally(className)) {
-    alert(`You are not allowed to register students for "${className}".`);
     return;
   }
   if (fee < 0) fee = 0;
@@ -271,7 +258,7 @@ async function registerStudent(event) {
 }
 
 // -------------------------------
-// Record Results (admins; subcollection)
+// Record Results (any active admin)
 // -------------------------------
 function calculateGrade(total) {
   if (total >= 70) return 'A';
@@ -297,13 +284,12 @@ async function recordResults(event) {
     return;
   }
 
-  // Optional local check (rules still enforce):
-  const sSnap = await getDoc(doc(db, "students", studentId));
-  if (!sSnap.exists()) return alert('Student not found!');
-  const s = sSnap.data();
-  if (!canWriteClassLocally(s.class)) {
-    return alert(`You are not allowed to record results for "${s.class}".`);
-    // The Firestore security rules will also block the write if attempted.
+  // ensure student exists
+  const sRef = doc(db, "students", studentId);
+  const sSnap = await getDoc(sRef);
+  if (!sSnap.exists()) {
+    alert('Student not found!');
+    return;
   }
 
   const total = ca + exam;
@@ -341,7 +327,7 @@ async function getLatestResult(studentId) {
 }
 
 // -------------------------------
-// Students table & datalists (UI filtered to allowed classes)
+// Students table & datalists
 // -------------------------------
 async function updateStudentsTable() {
   const tbody = document.getElementById('students-tbody');
@@ -349,12 +335,8 @@ async function updateStudentsTable() {
   tbody.innerHTML = '';
 
   const snap = await getDocs(collection(db, "students"));
-  let rows = [];
+  const rows = [];
   snap.forEach(d => rows.push(d.data()));
-
-  if (currentAdmin?.allowedClasses?.length) {
-    rows = rows.filter(s => currentAdmin.allowedClasses.includes(s.class));
-  }
 
   rows.forEach(s => {
     const fee  = Number(s.fee)  || 0;
@@ -383,20 +365,14 @@ async function updateStudentsAutocomplete() {
   if (!list1 || !list2) return;
 
   const snap = await getDocs(collection(db, "students"));
-  let ids = [];
-  snap.forEach(d => ids.push(d.data().id));
-
-  // Optional: filter options to ustaz’s classes (requires reading each doc’s class; we already did above)
   let options = '';
-  for (const id of ids) {
-    options += `<option value="${id}"></option>`;
-  }
+  snap.forEach(d => { const s = d.data(); options += `<option value="${s.id}"></option>`; });
   list1.innerHTML = options;
   list2.innerHTML = options;
 }
 
 // -------------------------------
-// Edit / Save / Delete (admins; class-limited)
+// Edit / Save / Delete
 // -------------------------------
 async function editStudent(studentId) {
   const ref = doc(db, "students", studentId);
@@ -404,11 +380,8 @@ async function editStudent(studentId) {
   if (!snap.exists()) return alert("Student not found");
 
   const s = snap.data();
-  if (!canWriteClassLocally(s.class)) {
-    return alert(`You are not allowed to edit students in "${s.class}".`);
-  }
-
   currentEditingStudentId = studentId;
+
   document.getElementById('edit-name').value  = s.name || '';
   document.getElementById('edit-class').value = s.class || '';
   document.getElementById('edit-fee').value   = Number(s.fee) || 0;
@@ -435,14 +408,6 @@ async function saveStudentEdit(event) {
   if (paid < 0) paid = 0;
   if (paid > fee) paid = fee;
 
-  // Make sure the admin can write both old and new class (rules also enforce)
-  const oldSnap = await getDoc(doc(db, "students", currentEditingStudentId));
-  if (!oldSnap.exists()) return alert('Student not found!');
-  const oldClass = oldSnap.data().class;
-  if (!canWriteClassLocally(oldClass) || !canWriteClassLocally(cls)) {
-    return alert(`You are not allowed to change this student to class "${cls}".`);
-  }
-
   await updateDoc(doc(db, "students", currentEditingStudentId), {
     name, class: cls, fee, paid, updatedAt: serverTimestamp()
   });
@@ -453,16 +418,9 @@ async function saveStudentEdit(event) {
   alert('Student updated successfully!');
 }
 async function deleteStudent(studentId) {
-  const sSnap = await getDoc(doc(db, "students", studentId));
-  if (!sSnap.exists()) return alert('Student not found!');
-  const s = sSnap.data();
-  if (!canWriteClassLocally(s.class)) {
-    return alert(`You are not allowed to delete students in "${s.class}".`);
-  }
-
   if (!confirm('Are you sure you want to delete this student? This action cannot be undone.')) return;
 
-  // Optional: delete subcollection results
+  // Optional: delete subcollection "results"
   try {
     const rSnap = await getDocs(collection(db, "students", studentId, "results"));
     const deletions = [];
