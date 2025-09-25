@@ -8,7 +8,7 @@ import {
   collection, getDocs, query, orderBy, serverTimestamp, limit
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-// --- Your Firebase config ---
+// --- Firebase config ---
 const firebaseConfig = {
   apiKey: "AIzaSyAFdfON4KABa8pT60ACBdwAIO6EgarO5zs",
   authDomain: "ginna-b79aa.firebaseapp.com",
@@ -25,7 +25,7 @@ const db   = getFirestore(app);
 console.log("Firebase connected:", firebaseConfig.projectId);
 
 // -------------------------------
-// New class system (source of truth)
+// Class system
 // -------------------------------
 const CLASS_OPTIONS = [
   { value: "First Year Preparatory",  label: "Al-Awwal Al-I‘dādī – First Year Preparatory" },
@@ -52,14 +52,26 @@ function displayClass(value) {
 }
 
 // -------------------------------
+// Helpers
+// -------------------------------
+function randomPassword() {
+  const letters = "abcdefghijklmnopqrstuvwxyz";
+  let result = "";
+  for (let i = 0; i < 3; i++) {
+    result += letters.charAt(Math.floor(Math.random() * letters.length));
+  }
+  return result;
+}
+
+// -------------------------------
 // Session state
 // -------------------------------
 let isAdminLoggedIn = false;
-let currentAdmin = null;           // { uid, name, role, active }
+let currentAdmin = null;
 let currentEditingStudentId = null;
 
 // -------------------------------
-/* Boot (Auth-aware) */
+// Boot
 // -------------------------------
 document.addEventListener('DOMContentLoaded', () => {
   populateClassSelects();
@@ -78,7 +90,6 @@ document.addEventListener('DOMContentLoaded', () => {
           if (ustazEl) ustazEl.textContent = currentAdmin.name || "Ustaz";
           return;
         } else {
-          console.warn("Signed in but no active admin doc for UID:", user.uid);
           await signOut(auth);
         }
       } catch (err) {
@@ -86,7 +97,6 @@ document.addEventListener('DOMContentLoaded', () => {
         await signOut(auth);
       }
     }
-    // Not signed-in OR not active admin
     isAdminLoggedIn = false;
     currentAdmin = null;
     showAdminLogin();
@@ -119,13 +129,13 @@ function showAdminLogin() {
 function showAdminDashboard() {
   hideAllPages();
   document.getElementById('admin-dashboard').classList.add('active');
-  showTab('register'); // default tab
+  showTab('register');
   updateStudentsTable();
   updateStudentsAutocomplete();
 }
 
 // -------------------------------
-// Auth: Login / Logout
+// Auth
 // -------------------------------
 async function adminLogin(event) {
   event.preventDefault();
@@ -138,7 +148,7 @@ async function adminLogin(event) {
     const adminDoc = await getDoc(adminRef);
     if (!adminDoc.exists() || adminDoc.data().active !== true) {
       await signOut(auth);
-      throw new Error("No active admin profile. Create admins/" + cred.user.uid + " with { active: true }");
+      throw new Error("No active admin profile.");
     }
     currentAdmin = { uid: cred.user.uid, ...adminDoc.data() };
     isAdminLoggedIn = true;
@@ -146,7 +156,7 @@ async function adminLogin(event) {
     hideError('admin-error');
   } catch (e) {
     console.error("Login error:", e);
-    showError('admin-error', (e.code || 'auth/error') + ' — ' + (e.message || 'Login failed.'));
+    showError('admin-error', 'Login failed.');
   }
 }
 async function adminLogout() {
@@ -157,28 +167,17 @@ async function adminLogout() {
 }
 
 // -------------------------------
-// Tabs (robust)
+// Tabs
 // -------------------------------
 function showTab(tabName, btnEl = null) {
-  // panels
   document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
   const panel = document.getElementById(tabName + '-tab');
   if (panel) panel.classList.add('active');
 
-  // buttons
   const tabBtns = document.querySelectorAll('.tab-btn');
   tabBtns.forEach(b => b.classList.remove('active'));
-  if (btnEl) {
-    btnEl.classList.add('active');
-  } else {
-    const map = { register: 'Register Student', results: 'Record Results', students: 'Students List', receipt: 'Receipt' };
-    const target = Array.from(tabBtns).find(b => b.textContent.trim() === map[tabName]);
-    if (target) target.classList.add('active');
-  }
-
-  if (tabName === 'students') updateStudentsTable();
+  if (btnEl) btnEl.classList.add('active');
 }
-// Delegate clicks
 document.addEventListener('click', (event) => {
   if (event.target.classList.contains('tab-btn')) {
     const key = event.target.textContent.toLowerCase().replace(' ', '');
@@ -188,47 +187,71 @@ document.addEventListener('click', (event) => {
 });
 
 // -------------------------------
-// Student lookup (public read by default)
+// Student lookup
 // -------------------------------
 async function lookupStudent(event) {
   event.preventDefault();
-  const studentId = document.getElementById('student-id').value.trim();
-  if (!studentId) return;
 
-  const ref = doc(db, "students", studentId);
-  const snap = await getDoc(ref);
+  const studentId = document.getElementById('student-id')?.value.trim();
+  const password  = document.getElementById('student-pass')?.value.trim().toLowerCase();
 
-  if (!snap.exists()) {
-    showError('student-error', 'Student ID not found.');
+  if (!studentId || !password) {
+    showError('student-error', '⚠️ Please enter both Student ID and Password.');
     document.getElementById('student-profile').style.display = 'none';
     return;
   }
 
-  const student = snap.data();
+  const docRef = doc(db, "students", studentId);
+  const docSnap = await getDoc(docRef);
+
+  if (!docSnap.exists()) {
+    showError('student-error', '❌ Student ID not found.');
+    document.getElementById('student-profile').style.display = 'none';
+    return;
+  }
+
+  const student = docSnap.data();
+
+  if (!student.password || student.password.toLowerCase() !== password) {
+    showError('student-error', '❌ Invalid password. Please try again.');
+    document.getElementById('student-profile').style.display = 'none';
+    return;
+  }
+
+  // ✅ Password correct → show profile
   const results = await listResults(studentId);
   showStudentProfile(student, results);
   hideError('student-error');
 }
+
+// -------------------------------
+// Show student profile
+// -------------------------------
 function showStudentProfile(student, results = []) {
-  // info
   document.getElementById('student-name').textContent  = student.name ?? '';
   document.getElementById('student-class').textContent = displayClass(student.class);
 
-  // fees
   const fee  = Number(student.fee)  || 0;
   const paid = Number(student.paid) || 0;
   const outstanding = Math.max(fee - paid, 0);
+
   document.getElementById('fee-amount').textContent      = `₦${fee.toLocaleString()}`;
   document.getElementById('fee-paid').textContent        = `₦${paid.toLocaleString()}`;
   document.getElementById('fee-outstanding').textContent = `₦${outstanding.toLocaleString()}`;
 
   const pill = document.getElementById('fee-status');
   pill.className = 'status-pill';
-  if (outstanding === 0) { pill.classList.add('paid'); pill.textContent = 'PAID'; }
-  else if (paid > 0)     { pill.classList.add('partial'); pill.textContent = 'PARTIAL'; }
-  else                   { pill.classList.add('unpaid'); pill.textContent = 'UNPAID'; }
+  if (outstanding === 0) { 
+    pill.classList.add('paid'); 
+    pill.textContent = 'PAID'; 
+  } else if (paid > 0) { 
+    pill.classList.add('partial'); 
+    pill.textContent = 'PARTIAL'; 
+  } else { 
+    pill.classList.add('unpaid'); 
+    pill.textContent = 'UNPAID'; 
+  }
 
-  // results table
   const tbody = document.getElementById('results-tbody');
   tbody.innerHTML = '';
   if (results.length) {
@@ -246,11 +269,14 @@ function showStudentProfile(student, results = []) {
   } else {
     tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#666;">No results available</td></tr>';
   }
+
+  // ✅ Show profile
   document.getElementById('student-profile').style.display = 'block';
 }
 
+
 // -------------------------------
-// Register student (any active admin) — uses new class list
+// Register student
 // -------------------------------
 async function registerStudent(event) {
   event.preventDefault();
@@ -259,6 +285,7 @@ async function registerStudent(event) {
   const name      = document.getElementById('reg-name').value.trim();
   const className = document.getElementById('reg-class').value;
   let fee         = parseInt(document.getElementById('reg-fee').value);
+  const password  = (document.getElementById('reg-pass')?.value.trim() || randomPassword()).toLowerCase();
 
   if (!id || !name || !className || isNaN(fee)) {
     alert('Please fill all fields.');
@@ -280,22 +307,23 @@ async function registerStudent(event) {
   await setDoc(ref, {
     id,
     name,
-    class: className, // saved as the standardized English value
+    class: className,
     fee,
     paid: 0,
+    password, // save password
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp()
   });
 
   document.getElementById('register-form').reset();
-  populateClassSelects(); // keep selects fresh if page re-renders
+  populateClassSelects();
   await updateStudentsAutocomplete();
   await updateStudentsTable();
-  alert('Student registered successfully!');
+  alert(`✅ Student registered successfully! Password: ${password}`);
 }
 
 // -------------------------------
-// Record Results (any active admin)
+// Record Results
 // -------------------------------
 function calculateGrade(total) {
   if (total >= 70) return 'A';
@@ -314,10 +342,6 @@ async function recordResults(event) {
 
   if (!studentId || !subject || isNaN(ca) || isNaN(exam)) {
     alert('Please complete all fields.');
-    return;
-  }
-  if (ca < 0 || ca > 40 || exam < 0 || exam > 60) {
-    alert('Please keep CA within 0–40 and Exam within 0–60.');
     return;
   }
 
@@ -342,7 +366,9 @@ async function recordResults(event) {
   alert('Results recorded successfully!');
 }
 
-// read helpers
+// -------------------------------
+// Read helpers
+// -------------------------------
 async function listResults(studentId) {
   const qRef = query(collection(db, "students", studentId, "results"), orderBy("subject"));
   const snap = await getDocs(qRef);
@@ -363,7 +389,7 @@ async function getLatestResult(studentId) {
 }
 
 // -------------------------------
-// Students table & datalists
+// Students table
 // -------------------------------
 async function updateStudentsTable() {
   const tbody = document.getElementById('students-tbody');
@@ -371,10 +397,8 @@ async function updateStudentsTable() {
   tbody.innerHTML = '';
 
   const snap = await getDocs(collection(db, "students"));
-  const rows = [];
-  snap.forEach(d => rows.push(d.data()));
-
-  rows.forEach(s => {
+  snap.forEach(d => {
+    const s = d.data();
     const fee  = Number(s.fee)  || 0;
     const paid = Number(s.paid) || 0;
     const outstanding = Math.max(fee - paid, 0);
@@ -399,7 +423,6 @@ async function updateStudentsAutocomplete() {
   const list1 = document.getElementById('students-list');
   const list2 = document.getElementById('students-list-receipt');
   if (!list1 || !list2) return;
-
   const snap = await getDocs(collection(db, "students"));
   let options = '';
   snap.forEach(d => { const s = d.data(); options += `<option value="${s.id}"></option>`; });
@@ -439,13 +462,11 @@ async function saveStudentEdit(event) {
   let paid = parseInt(document.getElementById('edit-paid').value);
 
   if (!isValidClass(cls)) {
-    alert('Please select a valid class from the list.');
+    alert('Please select a valid class.');
     return;
   }
   fee  = isNaN(fee)  ? 0 : fee;
   paid = isNaN(paid) ? 0 : paid;
-  if (fee < 0) fee = 0;
-  if (paid < 0) paid = 0;
   if (paid > fee) paid = fee;
 
   await updateDoc(doc(db, "students", currentEditingStudentId), {
@@ -458,21 +479,17 @@ async function saveStudentEdit(event) {
   alert('Student updated successfully!');
 }
 async function deleteStudent(studentId) {
-  if (!confirm('Are you sure you want to delete this student? This action cannot be undone.')) return;
-
-  // Optional: delete subcollection "results"
+  if (!confirm('Are you sure you want to delete this student?')) return;
   try {
     const rSnap = await getDocs(collection(db, "students", studentId, "results"));
     const deletions = [];
     rSnap.forEach(d => deletions.push(deleteDoc(doc(db, "students", studentId, "results", d.id))));
     await Promise.all(deletions);
   } catch (_) {}
-
   await deleteDoc(doc(db, "students", studentId));
   await updateStudentsTable();
   await updateStudentsAutocomplete();
 }
-
 // -------------------------------
 // Receipt
 // -------------------------------
@@ -481,11 +498,13 @@ async function generateReceipt(event) {
   const studentId = document.getElementById('receipt-student-id').value.trim();
   await buildAndShowReceipt(studentId);
 }
+
 async function generateReceiptForStudent(studentId) {
   showTab('receipt');
   document.getElementById('receipt-student-id').value = studentId;
   await buildAndShowReceipt(studentId);
 }
+
 async function buildAndShowReceipt(studentId) {
   if (!studentId) return alert('Please enter a Student ID.');
   const sSnap = await getDoc(doc(db, "students", studentId));
@@ -495,6 +514,7 @@ async function buildAndShowReceipt(studentId) {
   const latest = await getLatestResult(studentId);
   showReceiptView(s, latest);
 }
+
 function showReceiptView(student, latestResult = null) {
   const fee  = Number(student.fee)  || 0;
   const paid = Number(student.paid) || 0;
@@ -518,10 +538,14 @@ function showReceiptView(student, latestResult = null) {
   } else {
     resultDiv.innerHTML = '<p style="color:#666;">No results available</p>';
   }
+
+  // ✅ Show student password on receipt
+  document.getElementById('receipt-password').textContent = `Student Password: ${student.password || '(not set)'}`;
+
   document.getElementById('receipt-view').style.display = 'block';
 }
-function printReceipt() { window.print(); }
 
+function printReceipt() { window.print(); }
 // -------------------------------
 // Errors
 // -------------------------------
@@ -536,7 +560,6 @@ function hideError(elementId) {
   if (!el) return;
   el.classList.remove('show');
 }
-
 // -------------------------------
 // Modal close on outside click
 // -------------------------------
@@ -568,3 +591,5 @@ Object.assign(window, {
   editStudent,
   deleteStudent
 });
+
+

@@ -41,6 +41,7 @@
                             <div class="form-group">
                                 <label for="student-id">Student ID</label>
                                 <input type="text" id="student-id" placeholder="MIG-2025-001" required>
+                                <input type="password" id="student-pass" placeholder="Enter password" maxlength="3" required>
                             </div>
                             <button type="submit" class="btn btn-primary">Lookup</button>
                         </form>
@@ -242,19 +243,22 @@
                         </div>
 
                         <div id="receipt-view" class="receipt-view" style="display: none;">
+                           
                             <div class="receipt-card">
                                 <div class="receipt-header">
                                     <h2>Markaz il Ginna</h2>
                                     <p class="receipt-date" id="receipt-date"></p>
                                     <div class="watermark">MIG</div>
+                                     <p id="receipt-password" style="margin-top:10px; color:#333; font-weight:bold;"></p>
                                 </div>
-                                
                                 <div class="receipt-body">
                                     <div class="receipt-section">
                                         <h3>Student Information</h3>
                                         <p><strong>ID:</strong> <span id="receipt-id"></span></p>
                                         <p><strong>Name:</strong> <span id="receipt-name"></span></p>
                                         <p><strong>Class:</strong> <span id="receipt-class"></span></p>
+                                        <p><strong>Password:</strong> <span id="receipt-pass"></span></p>
+
                                     </div>
 
                                     <div class="receipt-section">
@@ -301,7 +305,7 @@
                     </div>
                     <div class="form-group">
                         <label for="edit-class">Class</label>
-  <select id="reg-class">
+  <select id="edit-class">
   <option value="First Year Preparatory">Al-Awwal Al-I‘dādī – First Year Preparatory</option>
   <option value="Second Year Preparatory">Ath-Thānī Al-I‘dādī – Second Year Preparatory</option>
   <option value="Third Year Preparatory">Ath-Thālith Al-I‘dādī – Third Year Preparatory</option>
