@@ -63,6 +63,13 @@ function randomPassword() {
   }
   return result;
 }
+function ordinalSuffix(i) {
+  const j = i % 10, k = i % 100;
+  if (j === 1 && k !== 11) return i + "st";
+  if (j === 2 && k !== 12) return i + "nd";
+  if (j === 3 && k !== 13) return i + "rd";
+  return i + "th";
+}
 
 // -------------------------------
 // Session state
@@ -302,9 +309,10 @@ async function lookupStudent(event) {
   const classRef = doc(db, "classes", student.class);
   const classSnap = await getDoc(classRef);
   const classPublished = classSnap.exists() ? !!classSnap.data().resultsPublished : false;
+
   if (!published || !classPublished) {
     setResultsNotice(true, "Results are not yet released for your class.");
-    showStudentProfile(student, []);
+    showStudentProfile(student, []);     // no results shown
     hideError('student-error');
     return;
   }
@@ -321,17 +329,21 @@ async function lookupStudent(event) {
 function showStudentProfile(student, results = []) {
   document.getElementById('student-name').textContent  = student.name ?? '';
   document.getElementById('student-class').textContent = displayClass(student.class);
+
   const fee  = Number(student.fee)  || 0;
   const paid = Number(student.paid) || 0;
   const outstanding = Math.max(fee - paid, 0);
   document.getElementById('fee-amount').textContent      = `₦${fee.toLocaleString()}`;
   document.getElementById('fee-paid').textContent        = `₦${paid.toLocaleString()}`;
   document.getElementById('fee-outstanding').textContent = `₦${outstanding.toLocaleString()}`;
+
   const pill = document.getElementById('fee-status');
   pill.className = 'status-pill';
   if (outstanding === 0) { pill.classList.add('paid'); pill.textContent = 'PAID'; }
   else if (paid > 0)     { pill.classList.add('partial'); pill.textContent = 'PARTIAL'; }
-  else                   { pill.classList.add('unpaid'); pill.textContent = 'UNPAID'; }
+  else                   { pill.classList.add('unpaid');  pill.textContent = 'UNPAID';  }
+
+  // Results table
   const tbody = document.getElementById('results-tbody');
   tbody.innerHTML = '';
   if (results.length) {
@@ -349,21 +361,18 @@ function showStudentProfile(student, results = []) {
   } else {
     tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#666;">No results available</td></tr>';
   }
-  document.getElementById('student-profile').style.display = 'block';
-  // show position if available
-if (student.position) {
-  document.getElementById('student-position').textContent = ordinalSuffix(student.position);
-} else {
-  document.getElementById('student-position').textContent = "—";
-}
 
-}
-function ordinalSuffix(i) {
-  const j = i % 10, k = i % 100;
-  if (j === 1 && k !== 11) return i + "st";
-  if (j === 2 && k !== 12) return i + "nd";
-  if (j === 3 && k !== 13) return i + "rd";
-  return i + "th";
+  // Position (only meaningful when results are visible/available)
+  const posEl = document.getElementById('student-position');
+  if (posEl) {
+    if (results.length && typeof student.position === 'number') {
+      posEl.textContent = ordinalSuffix(student.position);
+    } else {
+      posEl.textContent = "—";
+    }
+  }
+
+  document.getElementById('student-profile').style.display = 'block';
 }
 
 // -------------------------------
@@ -376,6 +385,7 @@ async function registerStudent(event) {
   const className = document.getElementById('reg-class').value;
   let fee         = parseInt(document.getElementById('reg-fee').value);
   const password  = (document.getElementById('reg-pass')?.value.trim() || randomPassword());
+
   if (!id || !name || !className || isNaN(fee)) {
     alert('Please fill all fields.'); return;
   }
@@ -383,15 +393,18 @@ async function registerStudent(event) {
     alert('Please select a valid class.'); return;
   }
   if (fee < 0) fee = 0;
+
   const ref  = doc(db, "students", id);
   const snap = await getDoc(ref);
   if (snap.exists()) {
     alert('Student ID already exists!'); return;
   }
+
   await setDoc(ref, {
     id, name, class: className, fee, paid: 0, password,
     createdAt: serverTimestamp(), updatedAt: serverTimestamp()
   });
+
   document.getElementById('register-form').reset();
   populateClassSelects();
   await updateStudentsAutocomplete();
@@ -416,20 +429,25 @@ async function recordResults(event) {
   const subject   = document.getElementById('result-subject').value.trim();
   const ca        = parseInt(document.getElementById('result-ca').value);
   const exam      = parseInt(document.getElementById('result-exam').value);
+
   if (!studentId || !subject || isNaN(ca) || isNaN(exam)) {
     alert('Please complete all fields.'); return;
   }
+
   const sRef = doc(db, "students", studentId);
   const sSnap = await getDoc(sRef);
   if (!sSnap.exists()) { alert('Student not found!'); return; }
+
   const total = ca + exam;
   const grade = calculateGrade(total);
+
   const rRef = doc(db, "students", studentId, "results", subject);
   await setDoc(rRef, {
     subject, ca, exam, total, grade,
     date: new Date().toLocaleDateString('en-NG'),
     recordedAt: serverTimestamp()
   }, { merge: true });
+
   document.getElementById('results-form').reset();
   alert('Results recorded successfully!');
 }
@@ -463,8 +481,9 @@ async function updateStudentsTable() {
   const tbody = document.getElementById('students-tbody');
   if (!tbody) return;
   tbody.innerHTML = '';
+
   const snap = await getDocs(collection(db, "students"));
-    snap.forEach(d => {
+  snap.forEach(d => {
     const s = d.data();
     const fee  = Number(s.fee)  || 0;
     const paid = Number(s.paid) || 0;
@@ -491,6 +510,7 @@ async function updateStudentsAutocomplete() {
   const list1 = document.getElementById('students-list');
   const list2 = document.getElementById('students-list-receipt');
   if (!list1 || !list2) return;
+
   const snap = await getDocs(collection(db, "students"));
   let options = '';
   snap.forEach(d => { const s = d.data(); options += `<option value="${s.id}"></option>`; });
@@ -577,6 +597,7 @@ async function buildAndShowReceipt(studentId) {
   const sSnap = await getDoc(doc(db, "students", studentId));
   if (!sSnap.exists()) return alert('Student not found!');
   const s = sSnap.data();
+
   const latest = await getLatestResult(studentId);
   showReceiptView(s, latest);
 }
@@ -584,6 +605,7 @@ function showReceiptView(student, latestResult = null) {
   const fee  = Number(student.fee)  || 0;
   const paid = Number(student.paid) || 0;
   const outstanding = Math.max(fee - paid, 0);
+
   document.getElementById('receipt-date').textContent = new Date().toLocaleString('en-NG', { dateStyle: 'medium', timeStyle: 'short' });
   document.getElementById('receipt-id').textContent   = student.id;
   document.getElementById('receipt-name').textContent = student.name;
@@ -591,6 +613,7 @@ function showReceiptView(student, latestResult = null) {
   document.getElementById('receipt-fee').textContent  = `₦${fee.toLocaleString()}`;
   document.getElementById('receipt-paid').textContent = `₦${paid.toLocaleString()}`;
   document.getElementById('receipt-outstanding').textContent = `₦${outstanding.toLocaleString()}`;
+
   const resultDiv = document.getElementById('receipt-result');
   if (latestResult) {
     resultDiv.innerHTML = `
@@ -601,7 +624,10 @@ function showReceiptView(student, latestResult = null) {
   } else {
     resultDiv.innerHTML = '<p style="color:#666;">No results available</p>';
   }
+
+  // Student password on receipt
   document.getElementById('receipt-password').textContent = `Student Password: ${student.password || '(not set)'}`;
+
   document.getElementById('receipt-view').style.display = 'block';
 }
 function printReceipt() { window.print(); }
@@ -688,11 +714,6 @@ Object.assign(window, {
   updateStudentsAutocomplete,
   generatePositionsAllClasses
 });
-
-
-
-
-
 
 
 
