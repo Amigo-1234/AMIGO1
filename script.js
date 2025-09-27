@@ -350,6 +350,20 @@ function showStudentProfile(student, results = []) {
     tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#666;">No results available</td></tr>';
   }
   document.getElementById('student-profile').style.display = 'block';
+  // show position if available
+if (student.position) {
+  document.getElementById('student-position').textContent = ordinalSuffix(student.position);
+} else {
+  document.getElementById('student-position').textContent = "—";
+}
+
+}
+function ordinalSuffix(i) {
+  const j = i % 10, k = i % 100;
+  if (j === 1 && k !== 11) return i + "st";
+  if (j === 2 && k !== 12) return i + "nd";
+  if (j === 3 && k !== 13) return i + "rd";
+  return i + "th";
 }
 
 // -------------------------------
