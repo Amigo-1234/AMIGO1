@@ -451,6 +451,85 @@ async function recordResults(event) {
   document.getElementById('results-form').reset();
   alert('Results recorded successfully!');
 }
+// Save all subjects at once
+document.getElementById('submit-results-table')?.addEventListener('click', async () => {
+  const studentId = document.getElementById('result-student-id-table').value.trim();
+  if (!studentId) {
+    alert('Please enter a valid Student ID.');
+    return;
+  }
+
+  const rows = document.querySelectorAll('#results-entry-table tbody tr');
+  const batchPromises = [];
+
+  rows.forEach(row => {
+    const subject = row.cells[0].textContent.trim();
+    const ca = parseInt(row.cells[1].querySelector('input').value) || 0;
+    const exam = parseInt(row.cells[2].querySelector('input').value) || 0;
+
+    if (ca > 0 || exam > 0) {  // Only save if any score entered
+      const total = ca + exam;
+      const grade = calculateGrade(total);
+      const rRef = doc(db, "students", studentId, "results", subject);
+      batchPromises.push(setDoc(rRef, {
+        subject, ca, exam, total, grade,
+        date: new Date().toLocaleDateString('en-NG'),
+        recordedAt: serverTimestamp()
+      }, { merge: true }));
+    }
+  });
+
+  try {
+    await Promise.all(batchPromises);
+    alert('✅ All results saved successfully!');
+  } catch (error) {
+    console.error('Error saving results:', error);
+    alert('❌ Error saving some results. Check console.');
+  }
+});
+// --- LOOKUP Existing Results ---
+document.getElementById('lookup-results-btn')?.addEventListener('click', async () => {
+  const studentId = document.getElementById('result-student-id-table').value.trim();
+  if (!studentId) {
+    alert('⚠️ Please enter a valid Student ID.');
+    return;
+  }
+
+  try {
+    const qSnap = await getDocs(collection(db, "students", studentId, "results"));
+    if (qSnap.empty) {
+      alert('ℹ️ No previous results found for this student.');
+      return;
+    }
+
+    const tableRows = document.querySelectorAll('#results-entry-table tbody tr');
+    const resultsMap = {};
+    qSnap.forEach(docu => {
+      const data = docu.data();
+      resultsMap[data.subject] = data;
+    });
+
+    tableRows.forEach(row => {
+      const subject = row.cells[0].textContent.trim();
+      const caInput = row.cells[1].querySelector('input');
+      const examInput = row.cells[2].querySelector('input');
+
+      if (resultsMap[subject]) {
+        caInput.value = resultsMap[subject].ca ?? '';
+        examInput.value = resultsMap[subject].exam ?? '';
+      } else {
+        caInput.value = '';
+        examInput.value = '';
+      }
+    });
+
+    alert('✅ Previous results loaded. You can now cross-check or edit them.');
+
+  } catch (error) {
+    console.error('Error looking up results:', error);
+    alert('❌ Error loading results. Check console for details.');
+  }
+});
 
 // -------------------------------
 // Helpers for results

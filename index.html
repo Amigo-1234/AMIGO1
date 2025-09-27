@@ -199,33 +199,53 @@
               </form>
             </div>
           </div>
+<!-- Record Results Tab -->
+<div id="results-tab" class="tab-content">
+  <div class="card">
+    <h3>Record Student Results</h3>
 
-          <!-- Record Results Tab -->
-          <div id="results-tab" class="tab-content">
-            <div class="card">
-              <h3>Record Results</h3>
-              <form id="results-form" onsubmit="recordResults(event)">
-                <div class="form-group">
-                  <label for="result-student-id">Student ID</label>
-                  <input type="text" id="result-student-id" placeholder="MIG-2025-001" list="students-list" required />
-                  <datalist id="students-list"></datalist>
-                </div>
-                <div class="form-group">
-                  <label for="result-subject">Subject</label>
-                  <input type="text" id="result-subject" placeholder="Tajweed" required />
-                </div>
-                <div class="form-group">
-                  <label for="result-ca">CA Score (0-40)</label>
-                  <input type="number" id="result-ca" min="0" max="40" required />
-                </div>
-                <div class="form-group">
-                  <label for="result-exam">Exam Score (0-60)</label>
-                  <input type="number" id="result-exam" min="0" max="60" required />
-                </div>
-                <button type="submit" class="btn btn-primary">Record Results</button>
-              </form>
-            </div>
-          </div>
+    <!-- Student Lookup Section -->
+<div class="form-group" style="display:flex; gap:.5rem; align-items:flex-end;">
+  <div style="flex:1;">
+    <label for="result-student-id-table">Student ID</label>
+    <input type="text" id="result-student-id-table" placeholder="MIG-2025-001" list="students-list" required>
+    <datalist id="students-list"></datalist>
+  </div>
+  <button id="lookup-results-btn" class="btn btn-outline" style="white-space:nowrap;">🔍 Lookup</button>
+</div>
+
+
+    <!-- Subjects Table -->
+    <div class="table-container">
+      <table id="results-entry-table">
+        <thead>
+          <tr>
+            <th>Subject</th>
+            <th>CA (40)</th>
+            <th>Exam (60)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Tajweed</td><td><input type="number" min="0" max="40"></td><td><input type="number" min="0" max="60"></td></tr>
+          <tr><td>Arabic</td><td><input type="number" min="0" max="40"></td><td><input type="number" min="0" max="60"></td></tr>
+          <tr><td>Fiqh</td><td><input type="number" min="0" max="40"></td><td><input type="number" min="0" max="60"></td></tr>
+          <tr><td>Hadith</td><td><input type="number" min="0" max="40"></td><td><input type="number" min="0" max="60"></td></tr>
+          <tr><td>Tafseer</td><td><input type="number" min="0" max="40"></td><td><input type="number" min="0" max="60"></td></tr>
+          <tr><td>Lughatul Arabiyyah</td><td><input type="number" min="0" max="40"></td><td><input type="number" min="0" max="60"></td></tr>
+          <tr><td>Nahwu</td><td><input type="number" min="0" max="40"></td><td><input type="number" min="0" max="60"></td></tr>
+          <tr><td>Sarf</td><td><input type="number" min="0" max="40"></td><td><input type="number" min="0" max="60"></td></tr>
+          <tr><td>Aqeedah</td><td><input type="number" min="0" max="40"></td><td><input type="number" min="0" max="60"></td></tr>
+          <tr><td>Adab</td><td><input type="number" min="0" max="40"></td><td><input type="number" min="0" max="60"></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Submit Button -->
+    <button id="submit-results-table" class="btn btn-primary" style="margin-top:1rem;">
+      Save All Results
+    </button>
+  </div>
+</div>
 
           <!-- Students List Tab -->
           <div id="students-tab" class="tab-content">
