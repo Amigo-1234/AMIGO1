@@ -1,7 +1,7 @@
 // --- Firebase: imports (CDN) ---
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
 import {
-  getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut
+  getAuth, signInWithEmailAndPassword, signOut
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 import {
   getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc,
@@ -88,8 +88,6 @@ function showAdminDashboard() {
   showTab('register');
   updateStudentsTable();
   updateStudentsAutocomplete();
-  initAdminResultsToggle();
-  initClassResultsToggle();
 }
 
 // -------------------------------
@@ -149,23 +147,11 @@ async function lookupStudent(event) {
     return;
   }
 
-  // Results visibility
-  const globalSnap = await getDoc(doc(db, "settings", "global"));
-  const published = globalSnap.exists() ? !!globalSnap.data().resultsPublished : false;
-  const classSnap = await getDoc(doc(db, "classes", student.class));
-  const classPublished = classSnap.exists() ? !!classSnap.data().resultsPublished : false;
-  if (!published || !classPublished) {
-    setResultsNotice(true, "Results are not yet released for your class.");
-    showStudentProfile(student, []);
-    hideError('student-error');
-    return;
-  }
-
   const results = await listResults(studentId);
-  setResultsNotice(false);
   showStudentProfile(student, results);
   hideError('student-error');
 }
+
 // -------------------------------
 // Student profile display
 // -------------------------------
@@ -242,7 +228,7 @@ async function registerStudent(event) {
 }
 
 // -------------------------------
-// Record Results (restricted to single Uztaz)
+// Record Results (Uztaz only)
 // -------------------------------
 function calculateGrade(total) {
   if (total >= 70) return 'A';
@@ -300,7 +286,6 @@ async function generatePositionsForClass(className) {
     students.push({ id: student.id, totalMarks });
   }
 
-  // sort & rank
   students.sort((a, b) => b.totalMarks - a.totalMarks);
   for (let i = 0; i < students.length; i++) {
     const position = i + 1;
@@ -320,7 +305,7 @@ async function generatePositionsAllClasses() {
 }
 
 // -------------------------------
-// Helpers for results
+// Results helpers
 // -------------------------------
 async function listResults(studentId) {
   const qRef = query(collection(db, "students", studentId, "results"), orderBy("subject"));
@@ -380,19 +365,48 @@ function showReceiptView(student, latestResult = null) {
 function printReceipt() { window.print(); }
 
 // -------------------------------
+// Admin student edit/delete
+// -------------------------------
+function closeEditModal() {
+  document.getElementById('edit-modal').style.display = 'none';
+}
+async function saveStudentEdit(event) {
+  event.preventDefault();
+  if (!currentEditingStudentId) return;
+  const name = document.getElementById('edit-name').value.trim();
+  const className = document.getElementById('edit-class').value;
+  const fee = parseInt(document.getElementById('edit-fee').value);
+  const paid = parseInt(document.getElementById('edit-paid').value);
+
+  await updateDoc(doc(db, "students", currentEditingStudentId), {
+    name, class: className, fee, paid,
+    updatedAt: serverTimestamp()
+  });
+  closeEditModal();
+  updateStudentsTable();
+}
+function editStudent(id, data) {
+  currentEditingStudentId = id;
+  document.getElementById('edit-name').value = data.name;
+  document.getElementById('edit-class').value = data.class;
+  document.getElementById('edit-fee').value = data.fee;
+  document.getElementById('edit-paid').value = data.paid;
+  document.getElementById('edit-modal').style.display = 'block';
+}
+async function deleteStudent(id) {
+  if (!confirm("Are you sure you want to delete this student?")) return;
+  await deleteDoc(doc(db, "students", id));
+  updateStudentsTable();
+}
+
+// -------------------------------
 // Tabs
 // -------------------------------
 function showTab(tabName, btnEl = null) {
-  // hide all tabs
   document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-
-  // show the selected one
   const panel = document.getElementById(tabName + '-tab');
   if (panel) panel.classList.add('active');
-
-  // reset buttons
-  const tabBtns = document.querySelectorAll('.tab-btn');
-  tabBtns.forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   if (btnEl) btnEl.classList.add('active');
 }
 
@@ -414,14 +428,10 @@ function hideError(elementId) {
 // -------------------------------
 // Expose globally
 // -------------------------------
-// -------------------------------
-// Expose functions globally so HTML onclick can use them
-// -------------------------------
 Object.assign(window, {
-  showLanding,
   showStudentLogin,
   showAdminLogin,
-  showAdminDashboard,
+  showLanding,
   lookupStudent,
   adminLogin,
   adminLogout,
@@ -429,7 +439,7 @@ Object.assign(window, {
   registerStudent,
   recordResults,
   generateReceipt,
-  generateReceiptForStudent,
+  buildAndShowReceipt,
   printReceipt,
   closeEditModal,
   saveStudentEdit,
