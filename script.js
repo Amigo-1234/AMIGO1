@@ -5,7 +5,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 import {
   getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc,
-  collection, getDocs, query, orderBy, serverTimestamp, limit
+  collection, getDocs, query, orderBy, serverTimestamp, limit, where
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
 // --- Firebase config ---
@@ -19,10 +19,30 @@ const firebaseConfig = {
 };
 
 // --- Init Firebase ---
-const app = initializeApp(firebaseConfig);
+const app  = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db   = getFirestore(app);
+
 console.log("Firebase connected:", firebaseConfig.projectId);
+
+async function getStudentsByClass(className) {
+  try {
+    const qRef = query(
+      collection(db, "students"),
+      where("class", "==", className)
+    );
+    const snap = await getDocs(qRef);
+
+    const students = [];
+    snap.forEach(doc => students.push(doc.data()));
+    return students;
+  } catch (err) {
+    console.error("Error fetching students:", err);
+    return [];
+  }
+}
+ const students = await getStudentsByClass("First Year Secondary");
+console.log(students);
 
 // -------------------------------
 // Class system
@@ -104,6 +124,92 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // -------------------------------
+// Notices
+// -------------------------------
+function setResultsNotice(show, text) {
+  const el = document.getElementById('results-notice');
+  if (!el) return;
+  if (text) el.textContent = text;
+  el.style.display = show ? 'block' : 'none';
+}
+
+// -------------------------------
+// Global/class results toggle
+// -------------------------------
+const SETTINGS_GLOBAL_REF = doc(db, "settings", "global");
+
+async function ensureGlobalSettingsDoc() {
+  const s = await getDoc(SETTINGS_GLOBAL_REF);
+  if (!s.exists()) {
+    await setDoc(SETTINGS_GLOBAL_REF, {
+      resultsPublished: false,
+      updatedAt: serverTimestamp()
+    });
+  }
+}
+async function readGlobalResultsPublished() {
+  const s = await getDoc(SETTINGS_GLOBAL_REF);
+  return s.exists() && !!s.data().resultsPublished;
+}
+async function writeGlobalResultsPublished(v) {
+  await setDoc(SETTINGS_GLOBAL_REF, {
+    resultsPublished: !!v,
+    updatedAt: serverTimestamp()
+  }, { merge: true });
+}
+async function initAdminResultsToggle() {
+  try {
+    await ensureGlobalSettingsDoc();
+    const toggle = document.getElementById('toggle-global-results');
+    const status = document.getElementById('toggle-global-results-status');
+    if (!toggle) {
+      return;
+    }
+    const current = await readGlobalResultsPublished();
+    toggle.checked = current;
+    if (status) status.textContent = current
+      ? "Published — students can see results."
+      : "Hidden — students CANNOT see results yet.";
+    toggle.onchange = async () => {
+      const val = !!toggle.checked;
+      await writeGlobalResultsPublished(val);
+      if (status) status.textContent = val
+        ? "Published — students can see results."
+        : "Hidden — students CANNOT see results yet.";
+      alert(val ? "Results are now visible globally." : "Results are now hidden globally.");
+    };
+  } catch (e) {
+    console.error("Toggle init failed:", e);
+  }
+}
+
+// Per-class toggle
+async function initClassResultsToggle() {
+  const table = document.getElementById('class-publish-table');
+  if (!table) return;
+  table.innerHTML = '';
+  for (const c of CLASS_OPTIONS) {
+    const ref = doc(db, "classes", c.value);
+    const snap = await getDoc(ref);
+    let published = snap.exists() ? !!snap.data().resultsPublished : false;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${c.label}</td>
+      <td><input type="checkbox" id="class-toggle-${c.value}" ${published ? 'checked' : ''}></td>
+    `;
+    table.appendChild(tr);
+    const checkbox = tr.querySelector('input');
+    checkbox.onchange = async () => {
+      await setDoc(ref, {
+        resultsPublished: checkbox.checked,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+      alert(`${c.label} results are now ${checkbox.checked ? 'VISIBLE' : 'HIDDEN'}`);
+    };
+  }
+}
+
+// -------------------------------
 // Navigation
 // -------------------------------
 function hideAllPages() {
@@ -132,6 +238,8 @@ function showAdminDashboard() {
   showTab('register');
   updateStudentsTable();
   updateStudentsAutocomplete();
+  initAdminResultsToggle();
+  initClassResultsToggle(); // 👈 per-class toggle
 }
 
 // -------------------------------
@@ -141,7 +249,6 @@ async function adminLogin(event) {
   event.preventDefault();
   const email = document.getElementById('admin-email').value.trim();
   const password = document.getElementById('admin-password').value;
-
   try {
     const cred = await signInWithEmailAndPassword(auth, email, password);
     const adminRef = doc(db, "admins", cred.user.uid);
@@ -173,7 +280,6 @@ function showTab(tabName, btnEl = null) {
   document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
   const panel = document.getElementById(tabName + '-tab');
   if (panel) panel.classList.add('active');
-
   const tabBtns = document.querySelectorAll('.tab-btn');
   tabBtns.forEach(b => b.classList.remove('active'));
   if (btnEl) btnEl.classList.add('active');
@@ -193,16 +299,23 @@ async function lookupStudent(event) {
   event.preventDefault();
 
   const studentId = document.getElementById('student-id')?.value.trim();
-  const password  = document.getElementById('student-pass')?.value.trim().toLowerCase();
+  const inputPass = document.getElementById('student-pass')?.value.trim();
 
-  if (!studentId || !password) {
+  if (!studentId || !inputPass) {
     showError('student-error', '⚠️ Please enter both Student ID and Password.');
     document.getElementById('student-profile').style.display = 'none';
     return;
   }
 
-  const docRef = doc(db, "students", studentId);
-  const docSnap = await getDoc(docRef);
+  let docSnap;
+  try {
+    docSnap = await getDoc(doc(db, "students", studentId));
+  } catch (e) {
+    console.error(e);
+    showError('student-error', '⚠️ Could not read student record (permissions).');
+    document.getElementById('student-profile').style.display = 'none';
+    return;
+  }
 
   if (!docSnap.exists()) {
     showError('student-error', '❌ Student ID not found.');
@@ -211,47 +324,150 @@ async function lookupStudent(event) {
   }
 
   const student = docSnap.data();
+  const stored  = (student.password || '').toLowerCase();
+  const given   = (inputPass || '').toLowerCase();
 
-  if (!student.password || student.password.toLowerCase() !== password) {
+  if (stored !== given) {
     showError('student-error', '❌ Invalid password. Please try again.');
     document.getElementById('student-profile').style.display = 'none';
     return;
   }
 
-  // ✅ Password correct → show profile
-  const results = await listResults(studentId);
+  // 🔒 Global + Class publish gates (also wrapped)
+  let published = true, classPublished = true;
+  try {
+    published = await readGlobalResultsPublished();
+    const classSnap = await getDoc(doc(db, "classes", student.class));
+    classPublished = classSnap.exists() ? !!classSnap.data().resultsPublished : false;
+  } catch (e) {
+    console.warn('Publish checks failed (rules?):', e);
+  }
+
+  if (!published || !classPublished) {
+    setResultsNotice(true, "Results are not yet released for your class.");
+    showStudentProfile(student, []); // show profile with empty results
+    hideError('student-error');
+    return;
+  }
+
+  // Results allowed → load and show
+  let results = [];
+  try {
+    results = await listResults(studentId);
+  } catch (e) {
+    console.warn('Reading results blocked (rules?):', e);
+  }
+  setResultsNotice(false);
   showStudentProfile(student, results);
   hideError('student-error');
 }
+// -------------------------------
+// Helper for ordinal suffix
+// -------------------------------
+function getOrdinalSuffix(n) {
+  if (n % 10 === 1 && n % 100 !== 11) return "st";
+  if (n % 10 === 2 && n % 100 !== 12) return "nd";
+  if (n % 10 === 3 && n % 100 !== 13) return "rd";
+  return "th";
+}
 
 // -------------------------------
-// Show student profile
+// Generate Positions for a class
+// -------------------------------
+async function generatePositionsForClass(className) {
+  try {
+    // Get all students in the class
+    const q = query(collection(db, "students"), where("class", "==", className));
+    const snap = await getDocs(q);
+
+    if (snap.empty) {
+      alert(`No students found for ${className}`);
+      return;
+    }
+
+    // Collect students with their totals
+    const students = [];
+    for (const docSnap of snap.docs) {
+      const s = docSnap.data();
+
+      // Sum up all subjects for this student
+      const resultsSnap = await getDocs(collection(db, "students", s.id, "results"));
+      let totalMarks = 0;
+      resultsSnap.forEach(r => { totalMarks += (r.data().total || 0); });
+
+      students.push({
+        id: s.id,
+        name: s.name,
+        total: totalMarks
+      });
+    }
+
+    // Sort by total descending
+    students.sort((a, b) => b.total - a.total);
+
+    // Assign positions
+    let currentPos = 1;
+    let lastScore = null;
+    students.forEach((s, i) => {
+      if (lastScore !== null && s.total < lastScore) {
+        currentPos = i + 1;
+      }
+      s.position = `${currentPos}${getOrdinalSuffix(currentPos)}`;
+      lastScore = s.total;
+    });
+
+    // Save back to Firestore
+    for (const s of students) {
+      await updateDoc(doc(db, "students", s.id), {
+        position: s.position,
+        totalMarks: s.total,
+        updatedAt: serverTimestamp()
+      });
+    }
+
+    alert(`✅ Positions generated for ${className}`);
+    await updateStudentsTable(); // refresh table
+  } catch (err) {
+    console.error("Error generating positions:", err);
+    alert("Error generating positions. Check console.");
+  }
+}
+
+// -------------------------------
+// Generate Positions for ALL classes
+// -------------------------------
+async function generatePositionsAllClasses() {
+  for (const c of CLASS_OPTIONS) {
+    await generatePositionsForClass(c.value);
+  }
+  alert("✅ Positions generated for all classes!");
+}
+
+// -------------------------------
+// Expose functions globally
+// -------------------------------
+Object.assign(window, {
+  generatePositionsForClass,
+  generatePositionsAllClasses
+});
+
+// -------------------------------
+// Student profile display
 // -------------------------------
 function showStudentProfile(student, results = []) {
   document.getElementById('student-name').textContent  = student.name ?? '';
   document.getElementById('student-class').textContent = displayClass(student.class);
-
   const fee  = Number(student.fee)  || 0;
   const paid = Number(student.paid) || 0;
   const outstanding = Math.max(fee - paid, 0);
-
   document.getElementById('fee-amount').textContent      = `₦${fee.toLocaleString()}`;
   document.getElementById('fee-paid').textContent        = `₦${paid.toLocaleString()}`;
   document.getElementById('fee-outstanding').textContent = `₦${outstanding.toLocaleString()}`;
-
   const pill = document.getElementById('fee-status');
   pill.className = 'status-pill';
-  if (outstanding === 0) { 
-    pill.classList.add('paid'); 
-    pill.textContent = 'PAID'; 
-  } else if (paid > 0) { 
-    pill.classList.add('partial'); 
-    pill.textContent = 'PARTIAL'; 
-  } else { 
-    pill.classList.add('unpaid'); 
-    pill.textContent = 'UNPAID'; 
-  }
-
+  if (outstanding === 0) { pill.classList.add('paid'); pill.textContent = 'PAID'; }
+  else if (paid > 0)     { pill.classList.add('partial'); pill.textContent = 'PARTIAL'; }
+  else                   { pill.classList.add('unpaid'); pill.textContent = 'UNPAID'; }
   const tbody = document.getElementById('results-tbody');
   tbody.innerHTML = '';
   if (results.length) {
@@ -269,11 +485,8 @@ function showStudentProfile(student, results = []) {
   } else {
     tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#666;">No results available</td></tr>';
   }
-
-  // ✅ Show profile
   document.getElementById('student-profile').style.display = 'block';
 }
-
 
 // -------------------------------
 // Register student
@@ -284,35 +497,24 @@ async function registerStudent(event) {
   const id        = document.getElementById('reg-id').value.trim();
   const name      = document.getElementById('reg-name').value.trim();
   const className = document.getElementById('reg-class').value;
-  let fee         = parseInt(document.getElementById('reg-fee').value);
-  const password  = (document.getElementById('reg-pass')?.value.trim() || randomPassword()).toLowerCase();
+  let   fee       = parseInt(document.getElementById('reg-fee').value, 10);
 
-  if (!id || !name || !className || isNaN(fee)) {
-    alert('Please fill all fields.');
-    return;
-  }
-  if (!isValidClass(className)) {
-    alert('Please select a valid class from the list.');
-    return;
-  }
+  // ensure password is stored LOWERCASE
+  const rawPassEl = document.getElementById('reg-pass');
+  const password  = ((rawPassEl?.value || randomPassword()).trim()).toLowerCase();
+
+  if (!id || !name || !className || isNaN(fee)) { alert('Please fill all fields.'); return; }
+  if (!isValidClass(className))                 { alert('Please select a valid class.'); return; }
   if (fee < 0) fee = 0;
 
-  const ref  = doc(db, "students", id);
+  const ref = doc(db, "students", id);
   const snap = await getDoc(ref);
-  if (snap.exists()) {
-    alert('Student ID already exists!');
-    return;
-  }
+  if (snap.exists()) { alert('Student ID already exists!'); return; }
 
   await setDoc(ref, {
-    id,
-    name,
-    class: className,
-    fee,
-    paid: 0,
-    password, // save password
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp()
+    id, name, class: className, fee, paid: 0,
+    password,                    // ← stored normalized
+    createdAt: serverTimestamp(), updatedAt: serverTimestamp()
   });
 
   document.getElementById('register-form').reset();
@@ -339,35 +541,26 @@ async function recordResults(event) {
   const subject   = document.getElementById('result-subject').value.trim();
   const ca        = parseInt(document.getElementById('result-ca').value);
   const exam      = parseInt(document.getElementById('result-exam').value);
-
   if (!studentId || !subject || isNaN(ca) || isNaN(exam)) {
-    alert('Please complete all fields.');
-    return;
+    alert('Please complete all fields.'); return;
   }
-
   const sRef = doc(db, "students", studentId);
   const sSnap = await getDoc(sRef);
-  if (!sSnap.exists()) {
-    alert('Student not found!');
-    return;
-  }
-
+  if (!sSnap.exists()) { alert('Student not found!'); return; }
   const total = ca + exam;
   const grade = calculateGrade(total);
-
   const rRef = doc(db, "students", studentId, "results", subject);
   await setDoc(rRef, {
     subject, ca, exam, total, grade,
     date: new Date().toLocaleDateString('en-NG'),
     recordedAt: serverTimestamp()
   }, { merge: true });
-
   document.getElementById('results-form').reset();
   alert('Results recorded successfully!');
 }
 
 // -------------------------------
-// Read helpers
+// Helpers for results
 // -------------------------------
 async function listResults(studentId) {
   const qRef = query(collection(db, "students", studentId, "results"), orderBy("subject"));
@@ -395,11 +588,10 @@ async function updateStudentsTable() {
   const tbody = document.getElementById('students-tbody');
   if (!tbody) return;
   tbody.innerHTML = '';
-
   const snap = await getDocs(collection(db, "students"));
   snap.forEach(d => {
     const s = d.data();
-    const fee  = Number(s.fee)  || 0;
+        const fee  = Number(s.fee)  || 0;
     const paid = Number(s.paid) || 0;
     const outstanding = Math.max(fee - paid, 0);
     const tr = document.createElement('tr');
@@ -490,6 +682,7 @@ async function deleteStudent(studentId) {
   await updateStudentsTable();
   await updateStudentsAutocomplete();
 }
+
 // -------------------------------
 // Receipt
 // -------------------------------
@@ -498,28 +691,23 @@ async function generateReceipt(event) {
   const studentId = document.getElementById('receipt-student-id').value.trim();
   await buildAndShowReceipt(studentId);
 }
-
 async function generateReceiptForStudent(studentId) {
   showTab('receipt');
   document.getElementById('receipt-student-id').value = studentId;
   await buildAndShowReceipt(studentId);
 }
-
 async function buildAndShowReceipt(studentId) {
   if (!studentId) return alert('Please enter a Student ID.');
   const sSnap = await getDoc(doc(db, "students", studentId));
   if (!sSnap.exists()) return alert('Student not found!');
   const s = sSnap.data();
-
   const latest = await getLatestResult(studentId);
   showReceiptView(s, latest);
 }
-
 function showReceiptView(student, latestResult = null) {
   const fee  = Number(student.fee)  || 0;
   const paid = Number(student.paid) || 0;
   const outstanding = Math.max(fee - paid, 0);
-
   document.getElementById('receipt-date').textContent = new Date().toLocaleString('en-NG', { dateStyle: 'medium', timeStyle: 'short' });
   document.getElementById('receipt-id').textContent   = student.id;
   document.getElementById('receipt-name').textContent = student.name;
@@ -527,7 +715,6 @@ function showReceiptView(student, latestResult = null) {
   document.getElementById('receipt-fee').textContent  = `₦${fee.toLocaleString()}`;
   document.getElementById('receipt-paid').textContent = `₦${paid.toLocaleString()}`;
   document.getElementById('receipt-outstanding').textContent = `₦${outstanding.toLocaleString()}`;
-
   const resultDiv = document.getElementById('receipt-result');
   if (latestResult) {
     resultDiv.innerHTML = `
@@ -538,14 +725,12 @@ function showReceiptView(student, latestResult = null) {
   } else {
     resultDiv.innerHTML = '<p style="color:#666;">No results available</p>';
   }
-
-  // ✅ Show student password on receipt
+  // ✅ Password included in receipt
   document.getElementById('receipt-password').textContent = `Student Password: ${student.password || '(not set)'}`;
-
   document.getElementById('receipt-view').style.display = 'block';
 }
-
 function printReceipt() { window.print(); }
+
 // -------------------------------
 // Errors
 // -------------------------------
@@ -560,6 +745,7 @@ function hideError(elementId) {
   if (!el) return;
   el.classList.remove('show');
 }
+
 // -------------------------------
 // Modal close on outside click
 // -------------------------------
@@ -571,8 +757,9 @@ if (editModal) {
 }
 
 // -------------------------------
-// Expose functions for inline HTML
+// Expose functions globally
 // -------------------------------
+// --- Expose functions globally for HTML buttons ---
 Object.assign(window, {
   showStudentLogin,
   showAdminLogin,
@@ -589,7 +776,11 @@ Object.assign(window, {
   closeEditModal,
   saveStudentEdit,
   editStudent,
-  deleteStudent
+  deleteStudent,
+  generatePositionsAllClasses,  // 👈 include your new function here
 });
+
+
+
 
 
