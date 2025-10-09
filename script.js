@@ -1,11 +1,11 @@
-// --- Firebase: imports (CDN) ---
+// --- Firebase (CDN) ---
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
 import {
   getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 import {
   getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc,
-  collection, getDocs, query, orderBy, serverTimestamp, limit, where
+  collection, getDocs, query, orderBy, serverTimestamp, limit, where, runTransaction
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
 // --- Firebase config ---
@@ -22,781 +22,637 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db   = getFirestore(app);
-console.log("Firebase connected:", firebaseConfig.projectId);
+console.log("✅ Firebase connected:", firebaseConfig.projectId);
 
-// -------------------------------
-// Class system
-// -------------------------------
+// ===============================
+// 📅 YEAR & CLASS MODEL
+// ===============================
+const CURRENT_YEAR = new Date().getFullYear();
+
 const CLASS_OPTIONS = [
-  { value: "First Year Preparatory",  label: "Al-Awwal Al-I‘dādī – First Year Preparatory" },
-  { value: "Second Year Preparatory", label: "Ath-Thānī Al-I‘dādī – Second Year Preparatory" },
-  { value: "Third Year Preparatory",  label: "Ath-Thālith Al-I‘dādī – Third Year Preparatory" },
-  { value: "First Year Secondary",    label: "Al-Awwal Ath-Thanawī – First Year Secondary" },
-  { value: "Second Year Secondary",   label: "Ath-Thānī Ath-Thanawī – Second Year Secondary" },
-  { value: "Third Year Secondary",    label: "Ath-Thālith Ath-Thanawī – Third Year Secondary" }
+  { value: "Ibtidaiyah", label: "Ibtidā’iyah (Beginner)", code: "IBT" },
+  { value: "Idadiyah",   label: "Idādiyah (Middle)",      code: "IDA" },
+  { value: "Thanawiyah", label: "Thanāwiyah (Senior)",    code: "THA" }
 ];
-const CLASS_MAP = Object.fromEntries(CLASS_OPTIONS.map(o => [o.value, o.label]));
+const CLASS_LABELS = Object.fromEntries(CLASS_OPTIONS.map(c => [c.value, c.label]));
+const CLASS_CODES  = Object.fromEntries(CLASS_OPTIONS.map(c => [c.value, c.code]));
+
+const SUBJECTS_BY_CLASS = {
+  Ibtidaiyah: ["Tajweed","Arabic","Qur'an","Hadith","Fiqh","Akhlaq","Nahwu","Sarf","Dictation","Reading"],
+  Idadiyah:   ["Tajweed II","Arabic II","Qur'an II","Hadith II","Fiqh II","Akhlaq II","Nahwu II","Sarf II","Dictation II","Reading II"],
+  Thanawiyah: ["Tafsir III","Balagha III","Qur'an III","Hadith III","Fiqh III","Seerah III","Nahwu III","Sarf III","Dictation III","Reading III"]
+};
 
 function populateClassSelects() {
-  const build = () =>
-    CLASS_OPTIONS.map(o => `<option value="${o.value}">${o.label}</option>`).join("");
-  const reg = document.getElementById("reg-class");
-  const edit = document.getElementById("edit-class");
-  if (reg) reg.innerHTML = build();
-  if (edit) edit.innerHTML = build();
-}
-function isValidClass(value) {
-  return CLASS_OPTIONS.some(o => o.value === value);
-}
-function displayClass(value) {
-  return CLASS_MAP[value] || value || "";
-}
-
-// -------------------------------
-// Helpers
-// -------------------------------
-function randomPassword() {
-  const letters = "abcdefghijklmnopqrstuvwxyz";
-  let result = "";
-  for (let i = 0; i < 3; i++) {
-    result += letters.charAt(Math.floor(Math.random() * letters.length));
-  }
-  return result;
-}
-function ordinalSuffix(i) {
-  const j = i % 10, k = i % 100;
-  if (j === 1 && k !== 11) return i + "st";
-  if (j === 2 && k !== 12) return i + "nd";
-  if (j === 3 && k !== 13) return i + "rd";
-  return i + "th";
-}
-
-// -------------------------------
-// Session state
-// -------------------------------
-let isAdminLoggedIn = false;
-let currentAdmin = null;
-let currentEditingStudentId = null;
-
-// -------------------------------
-// Boot
-// -------------------------------
-document.addEventListener('DOMContentLoaded', () => {
-  populateClassSelects();
-
-  onAuthStateChanged(auth, async (user) => {
-    if (user) {
-      try {
-        const adminDoc = await getDoc(doc(db, "admins", user.uid));
-        if (adminDoc.exists() && adminDoc.data().active === true) {
-          currentAdmin = { uid: user.uid, ...adminDoc.data() };
-          isAdminLoggedIn = true;
-          showAdminDashboard();
-          await updateStudentsTable();
-          await updateStudentsAutocomplete();
-          const ustazEl = document.getElementById('ustaz-name');
-          if (ustazEl) ustazEl.textContent = currentAdmin.name || "Ustaz";
-          return;
-        } else {
-          await signOut(auth);
-        }
-      } catch (err) {
-        console.error("Admin doc read error:", err);
-        await signOut(auth);
-      }
-    }
-    isAdminLoggedIn = false;
-    currentAdmin = null;
-    showAdminLogin();
+  const html = CLASS_OPTIONS.map(c => `<option value="${c.value}">${c.label}</option>`).join("");
+  ["reg-class","edit-class","promote-class-select"].forEach(id=>{
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = html;
   });
-});
+}
+function getClassCode(v){ return CLASS_CODES[v] || ""; }
+function displayClass(v){ return CLASS_LABELS[v] || v || ""; }
+function isValidClass(v){ return !!CLASS_CODES[v]; }
 
-// -------------------------------
-// Notices
-// -------------------------------
-function setResultsNotice(show, text) {
-  const el = document.getElementById('results-notice');
-  if (!el) return;
+// ===============================
+// 🧰 HELPERS
+// ===============================
+function randomPassword(){
+  const letters="abcdefghijklmnopqrstuvwxyz";
+  return Array.from({length:3},()=>letters[Math.floor(Math.random()*letters.length)]).join("");
+}
+function ordinalSuffix(i){ const j=i%10,k=i%100; if(j===1&&k!==11)return i+"st"; if(j===2&&k!==12)return i+"nd"; if(j===3&&k!==13)return i+"rd"; return i+"th"; }
+function setResultsNotice(show,text){
+  const el=document.getElementById('results-notice');
+  if(!el) return;
   if (text) el.textContent = text;
-  el.style.display = show ? 'block' : 'none';
+  el.style.display = show ? 'block':'none';
 }
-
-// -------------------------------
-// Global/class results toggle
-// -------------------------------
-const SETTINGS_GLOBAL_REF = doc(db, "settings", "global");
-
-async function ensureGlobalSettingsDoc() {
-  const s = await getDoc(SETTINGS_GLOBAL_REF);
-  if (!s.exists()) {
-    await setDoc(SETTINGS_GLOBAL_REF, {
-      resultsPublished: false,
-      updatedAt: serverTimestamp()
-    });
+function setLoading(el,isLoading,textWhenDone){
+  if(!el) return;
+  el.disabled = !!isLoading;
+  if(isLoading){
+    el.dataset.oldText = el.textContent;
+    el.textContent = 'Please wait…';
+  }else{
+    el.textContent = textWhenDone || el.dataset.oldText || el.textContent;
   }
 }
-async function readGlobalResultsPublished() {
-  const s = await getDoc(SETTINGS_GLOBAL_REF);
-  return s.exists() && !!s.data().resultsPublished;
-}
-async function writeGlobalResultsPublished(v) {
-  await setDoc(SETTINGS_GLOBAL_REF, {
-    resultsPublished: !!v,
-    updatedAt: serverTimestamp()
-  }, { merge: true });
-}
-async function initAdminResultsToggle() {
-  try {
-    await ensureGlobalSettingsDoc();
-    const toggle = document.getElementById('toggle-global-results');
-    const status = document.getElementById('toggle-global-results-status');
-    if (!toggle) return;
-    const current = await readGlobalResultsPublished();
-    toggle.checked = current;
-    if (status) status.textContent = current
-      ? "Published — students can see results."
-      : "Hidden — students CANNOT see results yet.";
-    toggle.onchange = async () => {
-      const val = !!toggle.checked;
-      await writeGlobalResultsPublished(val);
-      if (status) status.textContent = val
-        ? "Published — students can see results."
-        : "Hidden — students CANNOT see results yet.";
-      alert(val ? "Results are now visible globally." : "Results are now hidden globally.");
-    };
-  } catch (e) {
-    console.error("Toggle init failed:", e);
-  }
-}
+const busy = { register:false, recordSingle:false, lookupTable:false, saveAll:false };
 
-// Per-class toggle
-async function initClassResultsToggle() {
-  const table = document.getElementById('class-publish-table');
-  if (!table) return;
-  table.innerHTML = '';
-  for (const c of CLASS_OPTIONS) {
-    const ref = doc(db, "classes", c.value);
-    const snap = await getDoc(ref);
-    let published = snap.exists() ? !!snap.data().resultsPublished : false;
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${c.label}</td>
-      <td><input type="checkbox" id="class-toggle-${c.value}" ${published ? 'checked' : ''}></td>
-    `;
-    table.appendChild(tr);
-    const checkbox = tr.querySelector('input');
-    checkbox.onchange = async () => {
-      await setDoc(ref, {
-        resultsPublished: checkbox.checked,
-        updatedAt: serverTimestamp()
-      }, { merge: true });
-      alert(`${c.label} results are now ${checkbox.checked ? 'VISIBLE' : 'HIDDEN'}`);
-    };
-  }
-}
-
-// -------------------------------
-// Navigation
-// -------------------------------
-function hideAllPages() {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-}
-function showLanding() {
-  hideAllPages();
-  document.getElementById('landing-page').classList.add('active');
-}
-function showStudentLogin() {
-  hideAllPages();
-  document.getElementById('student-page').classList.add('active');
+// ===============================
+// 🧭 NAVIGATION
+// ===============================
+function hideAllPages(){ document.querySelectorAll('.page').forEach(p=>p.classList.remove('active')); }
+function showLanding(){ hideAllPages(); document.getElementById('landing-page')?.classList.add('active'); }
+function showStudentLogin(){
+  hideAllPages(); document.getElementById('student-page')?.classList.add('active');
   document.getElementById('student-form')?.reset();
-  document.getElementById('student-profile').style.display = 'none';
+  const prof = document.getElementById('student-profile'); if (prof) prof.style.display='none';
   hideError('student-error');
 }
-function showAdminLogin() {
-  hideAllPages();
-  document.getElementById('admin-login-page').classList.add('active');
+function showAdminLogin(){
+  hideAllPages(); document.getElementById('admin-login-page')?.classList.add('active');
   document.getElementById('admin-form')?.reset();
   hideError('admin-error');
 }
-function showAdminDashboard() {
-  hideAllPages();
-  document.getElementById('admin-dashboard').classList.add('active');
+function showAdminDashboard(){
+  hideAllPages(); document.getElementById('admin-dashboard')?.classList.add('active');
   showTab('register');
+  populateClassSelects();
   updateStudentsTable();
   updateStudentsAutocomplete();
   initAdminResultsToggle();
   initClassResultsToggle();
 }
 
-// -------------------------------
-// Auth
-// -------------------------------
-async function adminLogin(event) {
-  event.preventDefault();
-  const email = document.getElementById('admin-email').value.trim();
-  const password = document.getElementById('admin-password').value;
-  try {
-    const cred = await signInWithEmailAndPassword(auth, email, password);
-    const adminRef = doc(db, "admins", cred.user.uid);
-    const adminDoc = await getDoc(adminRef);
-    if (!adminDoc.exists() || adminDoc.data().active !== true) {
-      await signOut(auth);
-      throw new Error("No active admin profile.");
-    }
-    currentAdmin = { uid: cred.user.uid, ...adminDoc.data() };
-    isAdminLoggedIn = true;
-    showAdminDashboard();
-    hideError('admin-error');
-  } catch (e) {
-    console.error("Login error:", e);
-    showError('admin-error', 'Login failed.');
-  }
-}
-async function adminLogout() {
-  await signOut(auth);
-  isAdminLoggedIn = false;
-  currentAdmin = null;
-  showLanding();
-}
+// ===============================
+// 👤 AUTH (Admin)
+// ===============================
+let isAdminLoggedIn=false; let currentAdmin=null;
 
-// -------------------------------
-// Tabs
-// -------------------------------
-function showTab(tabName, btnEl = null) {
-  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-  const panel = document.getElementById(tabName + '-tab');
-  if (panel) panel.classList.add('active');
-  const tabBtns = document.querySelectorAll('.tab-btn');
-  tabBtns.forEach(b => b.classList.remove('active'));
-  if (btnEl) btnEl.classList.add('active');
+async function adminLogin(e){
+  e.preventDefault();
+  const email=document.getElementById('admin-email').value.trim();
+  const password=document.getElementById('admin-password').value;
+  try{
+    const cred=await signInWithEmailAndPassword(auth,email,password);
+    const adminSnap=await getDoc(doc(db,"admins",cred.user.uid));
+    if(!adminSnap.exists() || !adminSnap.data().active){ await signOut(auth); throw new Error("No active admin profile"); }
+    currentAdmin={ uid:cred.user.uid, ...adminSnap.data() }; isAdminLoggedIn=true; showAdminDashboard();
+  }catch(err){ console.error(err); showError('admin-error',"Login failed."); }
 }
-document.addEventListener('click', (event) => {
-  if (event.target.classList.contains('tab-btn')) {
-    const key = event.target.textContent.toLowerCase().replace(' ', '');
-    const map = { registerstudent: 'register', recordresults: 'results', studentslist: 'students', receipt: 'receipt' };
-    showTab(map[key] || 'register', event.target);
-  }
+async function adminLogout(){ await signOut(auth); isAdminLoggedIn=false; currentAdmin=null; showLanding(); }
+
+onAuthStateChanged(auth, async (user)=>{
+  if(user){
+    try{
+      const snap=await getDoc(doc(db,"admins",user.uid));
+      if(snap.exists() && snap.data().active){ currentAdmin={ uid:user.uid, ...snap.data() }; isAdminLoggedIn=true; showAdminDashboard(); return; }
+    }catch{}
+    await signOut(auth); showAdminLogin();
+  }else{ showAdminLogin(); }
 });
 
-// -------------------------------
-// Student lookup
-// -------------------------------
-async function lookupStudent(event) {
-  event.preventDefault();
-  const studentId = document.getElementById('student-id')?.value.trim();
-  const password  = document.getElementById('student-pass')?.value.trim();
-  if (!studentId || !password) {
-    showError('student-error', '⚠️ Please enter both Student ID and Password.');
-    document.getElementById('student-profile').style.display = 'none';
-    return;
+// ===============================
+// 📑 TABS
+// ===============================
+function showTab(tabName, btnEl = null) {
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById(`${tabName}-tab`)?.classList.add('active');
+
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  if (btnEl) btnEl.classList.add('active');
+
+  // optional: refresh data when entering certain tabs
+  if (tabName === 'students') updateStudentsTable();
+  if (tabName === 'results' || tabName === 'receipt') updateStudentsAutocomplete();
+}
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => showTab(btn.dataset.tab, btn));
+});
+
+
+// ===============================
+// 🔒 RESULTS VISIBILITY (global + per class)
+// ===============================
+const SETTINGS_GLOBAL_REF = doc(db,"settings","global");
+async function ensureGlobalSettingsDoc(){
+  const s=await getDoc(SETTINGS_GLOBAL_REF);
+  if(!s.exists()) await setDoc(SETTINGS_GLOBAL_REF,{ resultsPublished:false, updatedAt:serverTimestamp() });
+}
+async function readGlobalResultsPublished(){
+  const s=await getDoc(SETTINGS_GLOBAL_REF); return s.exists() && !!s.data().resultsPublished;
+}
+async function writeGlobalResultsPublished(v){
+  await setDoc(SETTINGS_GLOBAL_REF,{ resultsPublished:!!v, updatedAt:serverTimestamp() },{ merge:true });
+}
+async function initAdminResultsToggle(){
+  try{
+    await ensureGlobalSettingsDoc();
+    const toggle=document.getElementById('toggle-global-results');
+    const status=document.getElementById('toggle-global-results-status');
+    if(!toggle) return;
+    const current=await readGlobalResultsPublished();
+    toggle.checked=current;
+    if(status) status.textContent = current ? "Published — students can see results." : "Hidden — students CANNOT see results yet.";
+    toggle.onchange=async()=>{
+      const val=!!toggle.checked;
+      await writeGlobalResultsPublished(val);
+      if(status) status.textContent = val ? "Published — students can see results." : "Hidden — students CANNOT see results yet.";
+      alert(val ? "Results are now visible globally." : "Results are now hidden globally.");
+    };
+  }catch(e){ console.error("Toggle init failed:",e); }
+}
+async function initClassResultsToggle(){
+  const table=document.getElementById('class-publish-table'); if(!table) return;
+  table.innerHTML='';
+  for(const c of CLASS_OPTIONS){
+    const ref=doc(db,"classes",c.value); const snap=await getDoc(ref);
+    const published = snap.exists() ? !!snap.data().resultsPublished : false;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${c.label}</td><td><input type="checkbox" ${published?'checked':''}></td>`;
+    const checkbox=tr.querySelector('input');
+    checkbox.onchange=async()=>{ await setDoc(ref,{ resultsPublished:checkbox.checked, updatedAt:serverTimestamp() },{ merge:true }); alert(`${c.label} results are now ${checkbox.checked?'VISIBLE':'HIDDEN'}`); };
+    table.appendChild(tr);
   }
-  const docRef = doc(db, "students", studentId);
-  const docSnap = await getDoc(docRef);
-  if (!docSnap.exists()) {
-    showError('student-error', '❌ Student ID not found.');
-    document.getElementById('student-profile').style.display = 'none';
-    return;
+}
+
+// ===============================
+// 📝 REGISTRATION (with atomic counter)
+// ===============================
+async function nextMatricForClass(clsValue){
+  const code=getClassCode(clsValue); if(!code) throw new Error("Invalid class code.");
+  const year=new Date().getFullYear(); // always live year
+  const counterRef=doc(db,"counters",`${year}-${code}`);
+  return await runTransaction(db, async (tx)=>{
+    const snap=await tx.get(counterRef);
+    let seq;
+    if(!snap.exists()){
+      seq=1;
+      tx.set(counterRef,{ next:2, createdAt:serverTimestamp(), updatedAt:serverTimestamp() });
+    }else{
+      const curr=snap.data()?.next ?? 1;
+      seq=curr;
+      tx.update(counterRef,{ next:curr+1, updatedAt:serverTimestamp() });
+    }
+    const serial=String(seq).padStart(3,"0");
+    return `MG${code}-${year}-${serial}`; // e.g. MGIBT-2025-001
+  });
+}
+
+async function registerStudent(e){
+  e.preventDefault();
+  if (busy.register) return;
+  const btn = e.submitter || document.querySelector('#register-form button[type="submit"]');
+  try{
+    busy.register=true; setLoading(btn,true);
+    const name=document.getElementById('reg-name').value.trim();
+    const className=document.getElementById('reg-class').value;
+    let fee=parseInt(document.getElementById('reg-fee').value);
+    const password=(document.getElementById('reg-pass')?.value.trim() || randomPassword());
+    if(!name || !className || isNaN(fee)) { alert("⚠️ Fill all fields."); return; }
+    if(!isValidClass(className)) { alert("⚠️ Select a valid class."); return; }
+    if(fee<0) fee=0;
+
+    const id=await nextMatricForClass(className);
+    const ref=doc(db,"students",id);
+    const snap=await getDoc(ref);
+    if(snap.exists()) { alert("❌ Matric already exists. Try again."); return; }
+
+    await setDoc(ref,{ id,name,class:className,fee,paid:0,password, year:CURRENT_YEAR, createdAt:serverTimestamp(),updatedAt:serverTimestamp() });
+    document.getElementById('register-form').reset();
+    await updateStudentsTable();
+    await updateStudentsAutocomplete();
+    alert(`✅ Student Registered!\nID: ${id}\nPassword: ${password}`);
+  }catch(err){ console.error(err); alert("❌ Failed to register."); }
+  finally{ busy.register=false; setLoading(btn,false); }
+}
+
+// ===============================
+// 🧮 RESULTS (single)
+// ===============================
+function calculateGrade(total){ if(total>=70)return'A'; if(total>=60)return'B'; if(total>=50)return'C'; if(total>=45)return'D'; if(total>=40)return'E'; return'F'; }
+
+async function recordResults(e){
+  e.preventDefault();
+  if (busy.recordSingle) return;
+  const btn = e.submitter || document.querySelector('#results-form button[type="submit"]');
+  try{
+    busy.recordSingle=true; setLoading(btn,true);
+    const studentId=document.getElementById('result-student-id').value.trim();
+    const subject=document.getElementById('result-subject').value.trim();
+    const ca=parseInt(document.getElementById('result-ca').value);
+    const exam=parseInt(document.getElementById('result-exam').value);
+    if(!studentId || !subject || isNaN(ca) || isNaN(exam)){ alert("⚠️ Complete all fields"); return; }
+
+    const sRef=doc(db,"students",studentId); const sSnap=await getDoc(sRef);
+    if(!sSnap.exists()){ alert("❌ Student not found"); return; }
+
+    const total=ca+exam; const grade=calculateGrade(total);
+    const rRef=doc(db,"students",studentId,"results",subject);
+    await setDoc(rRef,{ subject,ca,exam,total,grade, date:new Date().toLocaleDateString('en-NG'), recordedAt:serverTimestamp() },{ merge:true });
+
+    document.getElementById('results-form').reset();
+    alert("✅ Result saved!");
+  }catch(err){ console.error(err); alert("❌ Failed to save result"); }
+  finally{ busy.recordSingle=false; setLoading(btn,false); }
+}
+
+// ===============================
+// 📊 RESULTS TABLE (lookup + save-all)
+// ===============================
+let currentLookupStudent=null;
+
+document.getElementById('lookup-btn')?.addEventListener('click', async (e)=>{
+  if (busy.lookupTable) return;
+  try{
+    busy.lookupTable=true; setLoading(e.currentTarget,true);
+    const studentId=document.getElementById('record-student-id').value.trim();
+    if(!studentId){ alert("Enter Student ID"); return; }
+    const sRef=doc(db,"students",studentId); const sSnap=await getDoc(sRef);
+    if(!sSnap.exists()){ alert("❌ Student not found"); return; }
+
+    currentLookupStudent={ id:studentId, ...sSnap.data() };
+    document.getElementById('record-student-name').textContent=currentLookupStudent.name;
+    document.getElementById('record-student-class').textContent=displayClass(currentLookupStudent.class);
+    document.getElementById('record-student-info').style.display='block';
+    await buildResultsTableForStudent(currentLookupStudent);
+  }catch(err){ console.error(err); alert("❌ Lookup failed"); }
+  finally{ busy.lookupTable=false; setLoading(e.currentTarget,false,'Lookup'); }
+});
+
+async function buildResultsTableForStudent(student){
+  const tbody=document.getElementById('record-results-tbody'); if(!tbody) return;
+  tbody.innerHTML='';
+  const subjects=SUBJECTS_BY_CLASS[student.class] || [];
+  const existingSnap=await getDocs(collection(db,"students",student.id,"results"));
+  const existing={}; existingSnap.forEach(d=>existing[d.id]=d.data());
+
+  subjects.forEach(sub=>{
+    const data=existing[sub] || { ca:'', exam:'', total:'', grade:'' };
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td>${sub}</td>
+      <td><input type="number" class="ca-input" min="0" max="40" value="${data.ca}"></td>
+      <td><input type="number" class="exam-input" min="0" max="60" value="${data.exam}"></td>
+      <td class="total-cell">${data.total || 0}</td>
+      <td class="grade-cell">${data.grade || ''}</td>
+    `;
+    const caI=tr.querySelector('.ca-input'); const exI=tr.querySelector('.exam-input');
+    const totalCell=tr.querySelector('.total-cell'); const gradeCell=tr.querySelector('.grade-cell');
+    const recalc=()=>{ const ca=parseInt(caI.value)||0; const ex=parseInt(exI.value)||0; const tot=ca+ex; totalCell.textContent=tot; gradeCell.textContent=calculateGrade(tot); };
+    caI.addEventListener('input',recalc); exI.addEventListener('input',recalc);
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById('results-table-container')?.style && (document.getElementById('results-table-container').style.display='block');
+  document.getElementById('save-results-row')?.style && (document.getElementById('save-results-row').style.display='block');
+}
+
+document.getElementById('save-results-btn')?.addEventListener('click', async (e)=>{
+  if (busy.saveAll) return;
+  try{
+    busy.saveAll=true; setLoading(e.currentTarget,true);
+    if(!currentLookupStudent){ alert("❌ No student selected"); return; }
+    const tbody=document.getElementById('record-results-tbody');
+    const rows=tbody?.querySelectorAll('tr') || [];
+    const writes=[];
+    for(const row of rows){
+      const subject=row.cells[0].textContent;
+      const ca=parseInt(row.querySelector('.ca-input').value)||0;
+      const exam=parseInt(row.querySelector('.exam-input').value)||0;
+      const total=ca+exam; const grade=calculateGrade(total);
+      const ref=doc(db,"students",currentLookupStudent.id,"results",subject);
+      writes.push(setDoc(ref,{ subject,ca,exam,total,grade, date:new Date().toLocaleDateString('en-NG'), recordedAt:serverTimestamp() },{ merge:true }));
+    }
+    await Promise.all(writes);
+    alert("✅ All results saved successfully!");
+  }catch(err){ console.error(err); alert("❌ Some results failed to save"); }
+  finally{ busy.saveAll=false; setLoading(e.currentTarget,false,'Save All'); }
+});
+
+// ===============================
+// 🏆 POSITIONS
+// ===============================
+async function listResults(studentId){
+  const qRef=query(collection(db,"students",studentId,"results"), orderBy("subject"));
+  const snap=await getDocs(qRef); const arr=[]; snap.forEach(d=>arr.push(d.data())); return arr;
+}
+async function getLatestResult(studentId){
+  try{
+    const qRef=query(collection(db,"students",studentId,"results"), orderBy("recordedAt","desc"), limit(1));
+    const snap=await getDocs(qRef); const docs=[]; snap.forEach(d=>docs.push(d.data())); if(docs.length) return docs[0];
+  }catch{}
+  const all=await listResults(studentId); return all[all.length-1] || null;
+}
+async function generatePositionsForClass(className){
+  const qRef=query(collection(db,"students"), where("class","==",className));
+  const snap=await getDocs(qRef); const students=[];
+  for(const d of snap.docs){
+    const s=d.data(); const res=await listResults(s.id);
+    const totalMarks=res.reduce((sum,r)=>sum+(r.total||0),0);
+    students.push({ id:s.id, totalMarks });
   }
-  const student = docSnap.data();
-  if (!student.password || student.password !== password.toLowerCase()) {
-    showError('student-error', '❌ Invalid password. Please try again.');
-    document.getElementById('student-profile').style.display = 'none';
-    return;
+  students.sort((a,b)=>b.totalMarks-a.totalMarks);
+  for(let i=0;i<students.length;i++){
+    await updateDoc(doc(db,"students",students[i].id), { position:i+1 });
+  }
+}
+async function generatePositionsAllClasses(){
+  try{
+    for(const c of CLASS_OPTIONS){ await generatePositionsForClass(c.value); }
+    alert("✅ Positions generated for all classes!");
+  }catch(e){ console.error(e); alert("❌ Failed to generate positions"); }
+}
+
+// ===============================
+// 👤 STUDENT LOOKUP (student side)
+// ===============================
+async function lookupStudent(e){
+  e.preventDefault();
+  const studentId=document.getElementById('student-id')?.value.trim();
+  const password=document.getElementById('student-pass')?.value.trim();
+  if(!studentId || !password){ showError('student-error','⚠️ Please enter both Student ID and Password.'); document.getElementById('student-profile').style.display='none'; return; }
+
+  const sRef=doc(db,"students",studentId); const sSnap=await getDoc(sRef);
+  if(!sSnap.exists()){ showError('student-error','❌ Student ID not found.'); document.getElementById('student-profile').style.display='none'; return; }
+  const student=sSnap.data();
+  if(!student.password || student.password !== password.toLowerCase()){ showError('student-error','❌ Invalid password.'); document.getElementById('student-profile').style.display='none'; return; }
+
+  const published=await readGlobalResultsPublished();
+  const classRef=doc(db,"classes",student.class); const classSnap=await getDoc(classRef);
+  const classPublished=classSnap.exists()? !!classSnap.data().resultsPublished : false;
+
+  if(!published || !classPublished){
+    setResultsNotice(true,"Results are not yet released for your class.");
+    showStudentProfile(student,[]);
+    hideError('student-error'); return;
   }
 
-  // 🔒 Global + class check
-  const published = await readGlobalResultsPublished();
-  const classRef = doc(db, "classes", student.class);
-  const classSnap = await getDoc(classRef);
-  const classPublished = classSnap.exists() ? !!classSnap.data().resultsPublished : false;
-
-  if (!published || !classPublished) {
-    setResultsNotice(true, "Results are not yet released for your class.");
-    showStudentProfile(student, []);     // no results shown
-    hideError('student-error');
-    return;
-  }
-
-  const results = await listResults(studentId);
+  const results=await listResults(studentId);
   setResultsNotice(false);
-  showStudentProfile(student, results);
+  showStudentProfile(student,results);
   hideError('student-error');
 }
 
-// -------------------------------
-// Student profile display
-// -------------------------------
-function showStudentProfile(student, results = []) {
-  document.getElementById('student-name').textContent  = student.name ?? '';
+function showStudentProfile(student, results=[]){
+  document.getElementById('student-name').textContent = student.name ?? '';
   document.getElementById('student-class').textContent = displayClass(student.class);
 
-  const fee  = Number(student.fee)  || 0;
-  const paid = Number(student.paid) || 0;
-  const outstanding = Math.max(fee - paid, 0);
-  document.getElementById('fee-amount').textContent      = `₦${fee.toLocaleString()}`;
-  document.getElementById('fee-paid').textContent        = `₦${paid.toLocaleString()}`;
+  const fee=Number(student.fee)||0, paid=Number(student.paid)||0, outstanding=Math.max(fee-paid,0);
+  document.getElementById('fee-amount').textContent = `₦${fee.toLocaleString()}`;
+  document.getElementById('fee-paid').textContent   = `₦${paid.toLocaleString()}`;
   document.getElementById('fee-outstanding').textContent = `₦${outstanding.toLocaleString()}`;
 
-  const pill = document.getElementById('fee-status');
-  pill.className = 'status-pill';
-  if (outstanding === 0) { pill.classList.add('paid'); pill.textContent = 'PAID'; }
-  else if (paid > 0)     { pill.classList.add('partial'); pill.textContent = 'PARTIAL'; }
-  else                   { pill.classList.add('unpaid');  pill.textContent = 'UNPAID';  }
+  const pill=document.getElementById('fee-status'); pill.className='status-pill';
+  if(outstanding===0){ pill.classList.add('paid'); pill.textContent='PAID'; }
+  else if(paid>0){ pill.classList.add('partial'); pill.textContent='PARTIAL'; }
+  else{ pill.classList.add('unpaid'); pill.textContent='UNPAID'; }
 
-  // Results table
-  const tbody = document.getElementById('results-tbody');
-  tbody.innerHTML = '';
-  if (results.length) {
-    results.forEach(r => {
-      const row = tbody.insertRow();
-      row.innerHTML = `
+  const tbody=document.getElementById('results-tbody'); tbody.innerHTML='';
+  if(results.length){
+    results.forEach(r=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML=`
         <td>${r.subject}</td>
         <td>${r.ca}</td>
         <td>${r.exam}</td>
         <td>${r.total}</td>
         <td class="grade-${(r.grade||'').toLowerCase()}">${r.grade}</td>
-        <td>${r.date || ''}</td>
+        <td>${r.date||''}</td>
       `;
+      tbody.appendChild(tr);
     });
-  } else {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#666;">No results available</td></tr>';
+  }else{
+    tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:#666;">No results available</td></tr>';
   }
 
-  // Position (only meaningful when results are visible/available)
-  const posEl = document.getElementById('student-position');
-  if (posEl) {
-    if (results.length && typeof student.position === 'number') {
-      posEl.textContent = ordinalSuffix(student.position);
-    } else {
-      posEl.textContent = "—";
-    }
-  }
-
-  document.getElementById('student-profile').style.display = 'block';
+  const posEl=document.getElementById('student-position');
+  if(posEl){ posEl.textContent = (results.length && typeof student.position==='number') ? ordinalSuffix(student.position) : "—"; }
+  document.getElementById('student-profile').style.display='block';
 }
 
-// -------------------------------
-// Register student
-// -------------------------------
-async function registerStudent(event) {
-  event.preventDefault();
-  const id        = document.getElementById('reg-id').value.trim();
-  const name      = document.getElementById('reg-name').value.trim();
-  const className = document.getElementById('reg-class').value;
-  let fee         = parseInt(document.getElementById('reg-fee').value);
-  const password  = (document.getElementById('reg-pass')?.value.trim() || randomPassword());
+// ===============================
+// 🧾 RECEIPT
+// ===============================
+async function generateReceipt(e){ e.preventDefault(); const id=document.getElementById('receipt-student-id').value.trim(); await buildAndShowReceipt(id); }
+async function generateReceiptForStudent(id){ showTab('receipt'); document.getElementById('receipt-student-id').value=id; await buildAndShowReceipt(id); }
 
-  if (!id || !name || !className || isNaN(fee)) {
-    alert('Please fill all fields.'); return;
-  }
-  if (!isValidClass(className)) {
-    alert('Please select a valid class.'); return;
-  }
-  if (fee < 0) fee = 0;
-
-  const ref  = doc(db, "students", id);
-  const snap = await getDoc(ref);
-  if (snap.exists()) {
-    alert('Student ID already exists!'); return;
-  }
-
-  await setDoc(ref, {
-    id, name, class: className, fee, paid: 0, password,
-    createdAt: serverTimestamp(), updatedAt: serverTimestamp()
-  });
-
-  document.getElementById('register-form').reset();
-  populateClassSelects();
-  await updateStudentsAutocomplete();
-  await updateStudentsTable();
-  alert(`✅ Student registered successfully! Password: ${password}`);
+async function buildAndShowReceipt(studentId){
+  if(!studentId) return alert('Please enter a Student ID.');
+  const sSnap=await getDoc(doc(db,"students",studentId)); if(!sSnap.exists()) return alert('Student not found!');
+  const s=sSnap.data(); const latest=await getLatestResult(studentId); showReceiptView(s,latest);
 }
-
-// -------------------------------
-// Record Results
-// -------------------------------
-function calculateGrade(total) {
-  if (total >= 70) return 'A';
-  if (total >= 60) return 'B';
-  if (total >= 50) return 'C';
-  if (total >= 45) return 'D';
-  if (total >= 40) return 'E';
-  return 'F';
+function showReceiptView(student, latest=null){
+  const fee=Number(student.fee)||0, paid=Number(student.paid)||0, outstanding=Math.max(fee-paid,0);
+  document.getElementById('receipt-date').textContent=new Date().toLocaleString('en-NG',{dateStyle:'medium', timeStyle:'short'});
+  document.getElementById('receipt-id').textContent=student.id;
+  document.getElementById('receipt-name').textContent=student.name;
+  document.getElementById('receipt-class').textContent=displayClass(student.class);
+  document.getElementById('receipt-fee').textContent=`₦${fee.toLocaleString()}`;
+  document.getElementById('receipt-paid').textContent=`₦${paid.toLocaleString()}`;
+  document.getElementById('receipt-outstanding').textContent=`₦${outstanding.toLocaleString()}`;
+  const resultDiv=document.getElementById('receipt-result');
+  if(latest){
+    resultDiv.innerHTML = `<p><strong>Subject:</strong> ${latest.subject}</p>
+      <p><strong>Total Score:</strong> ${latest.total} (Grade: ${latest.grade})</p>
+      <p><strong>Date:</strong> ${latest.date||''}</p>`;
+  }else{ resultDiv.innerHTML='<p style="color:#666;">No results available</p>'; }
+  document.getElementById('receipt-password').textContent=`Student Password: ${student.password || '(not set)'}`;
+  document.getElementById('receipt-view').style.display='block';
 }
-async function recordResults(event) {
-  event.preventDefault();
-  const studentId = document.getElementById('result-student-id').value.trim();
-  const subject   = document.getElementById('result-subject').value.trim();
-  const ca        = parseInt(document.getElementById('result-ca').value);
-  const exam      = parseInt(document.getElementById('result-exam').value);
+function printReceipt(){ window.print(); }
 
-  if (!studentId || !subject || isNaN(ca) || isNaN(exam)) {
-    alert('Please complete all fields.'); return;
-  }
-
-  const sRef = doc(db, "students", studentId);
-  const sSnap = await getDoc(sRef);
-  if (!sSnap.exists()) { alert('Student not found!'); return; }
-
-  const total = ca + exam;
-  const grade = calculateGrade(total);
-
-  const rRef = doc(db, "students", studentId, "results", subject);
-  await setDoc(rRef, {
-    subject, ca, exam, total, grade,
-    date: new Date().toLocaleDateString('en-NG'),
-    recordedAt: serverTimestamp()
-  }, { merge: true });
-
-  document.getElementById('results-form').reset();
-  alert('Results recorded successfully!');
-}
-// Save all subjects at once
-document.getElementById('submit-results-table')?.addEventListener('click', async () => {
-  const studentId = document.getElementById('result-student-id-table').value.trim();
-  if (!studentId) {
-    alert('Please enter a valid Student ID.');
-    return;
-  }
-
-  const rows = document.querySelectorAll('#results-entry-table tbody tr');
-  const batchPromises = [];
-
-  rows.forEach(row => {
-    const subject = row.cells[0].textContent.trim();
-    const ca = parseInt(row.cells[1].querySelector('input').value) || 0;
-    const exam = parseInt(row.cells[2].querySelector('input').value) || 0;
-
-    if (ca > 0 || exam > 0) {  // Only save if any score entered
-      const total = ca + exam;
-      const grade = calculateGrade(total);
-      const rRef = doc(db, "students", studentId, "results", subject);
-      batchPromises.push(setDoc(rRef, {
-        subject, ca, exam, total, grade,
-        date: new Date().toLocaleDateString('en-NG'),
-        recordedAt: serverTimestamp()
-      }, { merge: true }));
-    }
-  });
-
-  try {
-    await Promise.all(batchPromises);
-    alert('✅ All results saved successfully!');
-  } catch (error) {
-    console.error('Error saving results:', error);
-    alert('❌ Error saving some results. Check console.');
-  }
-});
-// --- LOOKUP Existing Results ---
-document.getElementById('lookup-results-btn')?.addEventListener('click', async () => {
-  const studentId = document.getElementById('result-student-id-table').value.trim();
-  if (!studentId) {
-    alert('⚠️ Please enter a valid Student ID.');
-    return;
-  }
-
-  try {
-    const qSnap = await getDocs(collection(db, "students", studentId, "results"));
-    if (qSnap.empty) {
-      alert('ℹ️ No previous results found for this student.');
-      return;
-    }
-
-    const tableRows = document.querySelectorAll('#results-entry-table tbody tr');
-    const resultsMap = {};
-    qSnap.forEach(docu => {
-      const data = docu.data();
-      resultsMap[data.subject] = data;
-    });
-
-    tableRows.forEach(row => {
-      const subject = row.cells[0].textContent.trim();
-      const caInput = row.cells[1].querySelector('input');
-      const examInput = row.cells[2].querySelector('input');
-
-      if (resultsMap[subject]) {
-        caInput.value = resultsMap[subject].ca ?? '';
-        examInput.value = resultsMap[subject].exam ?? '';
-      } else {
-        caInput.value = '';
-        examInput.value = '';
-      }
-    });
-
-    alert('✅ Previous results loaded. You can now cross-check or edit them.');
-
-  } catch (error) {
-    console.error('Error looking up results:', error);
-    alert('❌ Error loading results. Check console for details.');
-  }
-});
-
-// -------------------------------
-// Helpers for results
-// -------------------------------
-async function listResults(studentId) {
-  const qRef = query(collection(db, "students", studentId, "results"), orderBy("subject"));
-  const snap = await getDocs(qRef);
-  const arr = [];
-  snap.forEach(d => arr.push(d.data()));
-  return arr;
-}
-async function getLatestResult(studentId) {
-  try {
-    const qRef = query(collection(db, "students", studentId, "results"), orderBy("recordedAt", "desc"), limit(1));
-    const snap = await getDocs(qRef);
-    const docs = [];
-    snap.forEach(d => docs.push(d.data()));
-    if (docs.length) return docs[0];
-  } catch (_) {}
-  const all = await listResults(studentId);
-  return all[all.length - 1] || null;
-}
-
-// -------------------------------
-// Students table
-// -------------------------------
-async function updateStudentsTable() {
-  const tbody = document.getElementById('students-tbody');
-  if (!tbody) return;
-  tbody.innerHTML = '';
-
-  const snap = await getDocs(collection(db, "students"));
-  snap.forEach(d => {
-    const s = d.data();
-    const fee  = Number(s.fee)  || 0;
-    const paid = Number(s.paid) || 0;
-    const outstanding = Math.max(fee - paid, 0);
-
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
+// ===============================
+// 📋 STUDENTS TABLE (Admin)
+// ===============================
+async function updateStudentsTable(){
+  const tbody=document.getElementById('students-tbody'); if(!tbody) return; tbody.innerHTML='';
+  const snap=await getDocs(collection(db,"students"));
+  snap.forEach(d=>{
+    const s=d.data();
+    const fee=Number(s.fee)||0, paid=Number(s.paid)||0, out=Math.max(fee-paid,0);
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
       <td>${s.id}</td>
       <td>${s.name}</td>
       <td>${displayClass(s.class)}</td>
       <td>₦${fee.toLocaleString()}</td>
       <td>₦${paid.toLocaleString()}</td>
-      <td>₦${outstanding.toLocaleString()}</td>
-      <td>
+      <td>₦${out.toLocaleString()}</td>
+      <td class="action-cell">
         <button onclick="generateReceiptForStudent('${s.id}')" class="btn btn-primary btn-sm">Receipt</button>
         <button onclick="editStudent('${s.id}')" class="btn btn-outline btn-sm">Edit</button>
         <button onclick="deleteStudent('${s.id}')" class="btn btn-danger btn-sm">Delete</button>
-      </td>
-    `;
+        <button onclick="promoteSingleStudent('${s.id}')" class="btn btn-warning btn-sm">Promote</button>
+      </td>`;
     tbody.appendChild(tr);
   });
 }
-async function updateStudentsAutocomplete() {
-  const list1 = document.getElementById('students-list');
-  const list2 = document.getElementById('students-list-receipt');
-  if (!list1 || !list2) return;
-
-  const snap = await getDocs(collection(db, "students"));
-  let options = '';
-  snap.forEach(d => { const s = d.data(); options += `<option value="${s.id}"></option>`; });
-  list1.innerHTML = options;
-  list2.innerHTML = options;
+async function updateStudentsAutocomplete(){
+  const list1=document.getElementById('students-list');
+  const list2=document.getElementById('students-list-receipt');
+  if(!list1 || !list2) return;
+  const snap=await getDocs(collection(db,"students")); let opts='';
+  snap.forEach(d=>{ const s=d.data(); opts += `<option value="${s.id}"></option>`; });
+  list1.innerHTML=opts; list2.innerHTML=opts;
 }
 
-// -------------------------------
-// Edit / Save / Delete
-// -------------------------------
-async function editStudent(studentId) {
-  const ref = doc(db, "students", studentId);
-  const snap = await getDoc(ref);
-  if (!snap.exists()) return alert("Student not found");
+// ===============================
+// ✏️ EDIT / SAVE / DELETE
+// ===============================
+let currentEditingStudentId=null;
 
-  const s = snap.data();
-  currentEditingStudentId = studentId;
-
-  document.getElementById('edit-name').value  = s.name || '';
-  document.getElementById('edit-class').value = isValidClass(s.class) ? s.class : CLASS_OPTIONS[0].value;
-  document.getElementById('edit-fee').value   = Number(s.fee) || 0;
-  document.getElementById('edit-paid').value  = Number(s.paid) || 0;
-
+async function editStudent(studentId){
+  const ref=doc(db,"students",studentId); const snap=await getDoc(ref);
+  if(!snap.exists()) return alert("Student not found");
+  const s=snap.data(); currentEditingStudentId=studentId;
+  document.getElementById('edit-name').value=s.name||'';
+  document.getElementById('edit-class').value=isValidClass(s.class)? s.class : CLASS_OPTIONS[0].value;
+  document.getElementById('edit-fee').value=Number(s.fee)||0;
+  document.getElementById('edit-paid').value=Number(s.paid)||0;
   document.getElementById('edit-modal').classList.add('show');
 }
-function closeEditModal() {
-  document.getElementById('edit-modal').classList.remove('show');
-  currentEditingStudentId = null;
+function closeEditModal(){ document.getElementById('edit-modal').classList.remove('show'); currentEditingStudentId=null; }
+
+async function saveStudentEdit(e){
+  e.preventDefault(); if(!currentEditingStudentId) return;
+  const name=document.getElementById('edit-name').value.trim();
+  const cls=document.getElementById('edit-class').value;
+  let fee=parseInt(document.getElementById('edit-fee').value);
+  let paid=parseInt(document.getElementById('edit-paid').value);
+  if(!isValidClass(cls)) return alert('Please select a valid class.');
+  fee=isNaN(fee)?0:fee; paid=isNaN(paid)?0:paid; if(paid>fee) paid=fee;
+  await updateDoc(doc(db,"students",currentEditingStudentId),{ name, class:cls, fee, paid, updatedAt:serverTimestamp() });
+  await updateStudentsTable(); await updateStudentsAutocomplete(); closeEditModal(); alert('✅ Student updated!');
 }
-async function saveStudentEdit(event) {
-  event.preventDefault();
-  if (!currentEditingStudentId) return;
-
-  const name = document.getElementById('edit-name').value.trim();
-  const cls  = document.getElementById('edit-class').value;
-  let fee  = parseInt(document.getElementById('edit-fee').value);
-  let paid = parseInt(document.getElementById('edit-paid').value);
-
-  if (!isValidClass(cls)) {
-    alert('Please select a valid class.');
-    return;
-  }
-  fee  = isNaN(fee)  ? 0 : fee;
-  paid = isNaN(paid) ? 0 : paid;
-  if (paid > fee) paid = fee;
-
-  await updateDoc(doc(db, "students", currentEditingStudentId), {
-    name, class: cls, fee, paid, updatedAt: serverTimestamp()
-  });
-
-  await updateStudentsTable();
-  await updateStudentsAutocomplete();
-  closeEditModal();
-  alert('Student updated successfully!');
-}
-async function deleteStudent(studentId) {
-  if (!confirm('Are you sure you want to delete this student?')) return;
-  try {
-    const rSnap = await getDocs(collection(db, "students", studentId, "results"));
-    const deletions = [];
-    rSnap.forEach(d => deletions.push(deleteDoc(doc(db, "students", studentId, "results", d.id))));
+async function deleteStudent(studentId){
+  if(!confirm('Are you sure you want to delete this student?')) return;
+  try{
+    const rSnap=await getDocs(collection(db,"students",studentId,"results"));
+    const deletions=[]; rSnap.forEach(d=>deletions.push(deleteDoc(doc(db,"students",studentId,"results",d.id))));
     await Promise.all(deletions);
-  } catch (_) {}
-  await deleteDoc(doc(db, "students", studentId));
-  await updateStudentsTable();
-  await updateStudentsAutocomplete();
+  }catch{}
+  await deleteDoc(doc(db,"students",studentId));
+  await updateStudentsTable(); await updateStudentsAutocomplete();
 }
 
-// -------------------------------
-// Receipt
-// -------------------------------
-async function generateReceipt(event) {
-  event.preventDefault();
-  const studentId = document.getElementById('receipt-student-id').value.trim();
-  await buildAndShowReceipt(studentId);
-}
-async function generateReceiptForStudent(studentId) {
-  showTab('receipt');
-  document.getElementById('receipt-student-id').value = studentId;
-  await buildAndShowReceipt(studentId);
-}
-async function buildAndShowReceipt(studentId) {
-  if (!studentId) return alert('Please enter a Student ID.');
-  const sSnap = await getDoc(doc(db, "students", studentId));
-  if (!sSnap.exists()) return alert('Student not found!');
-  const s = sSnap.data();
+// ===============================
+// ⬆️ PROMOTION
+// ===============================
+function nextClass(current){ if(current==="Ibtidaiyah")return"Idadiyah"; if(current==="Idadiyah")return"Thanawiyah"; return null; }
 
-  const latest = await getLatestResult(studentId);
-  showReceiptView(s, latest);
-}
-function showReceiptView(student, latestResult = null) {
-  const fee  = Number(student.fee)  || 0;
-  const paid = Number(student.paid) || 0;
-  const outstanding = Math.max(fee - paid, 0);
-
-  document.getElementById('receipt-date').textContent = new Date().toLocaleString('en-NG', { dateStyle: 'medium', timeStyle: 'short' });
-  document.getElementById('receipt-id').textContent   = student.id;
-  document.getElementById('receipt-name').textContent = student.name;
-  document.getElementById('receipt-class').textContent= displayClass(student.class);
-  document.getElementById('receipt-fee').textContent  = `₦${fee.toLocaleString()}`;
-  document.getElementById('receipt-paid').textContent = `₦${paid.toLocaleString()}`;
-  document.getElementById('receipt-outstanding').textContent = `₦${outstanding.toLocaleString()}`;
-
-  const resultDiv = document.getElementById('receipt-result');
-  if (latestResult) {
-    resultDiv.innerHTML = `
-      <p><strong>Subject:</strong> ${latestResult.subject}</p>
-      <p><strong>Total Score:</strong> ${latestResult.total} (Grade: ${latestResult.grade})</p>
-      <p><strong>Date:</strong> ${latestResult.date || ''}</p>
-    `;
-  } else {
-    resultDiv.innerHTML = '<p style="color:#666;">No results available</p>';
-  }
-
-  // Student password on receipt
-  document.getElementById('receipt-password').textContent = `Student Password: ${student.password || '(not set)'}`;
-
-  document.getElementById('receipt-view').style.display = 'block';
-}
-function printReceipt() { window.print(); }
-
-// -------------------------------
-// Position Generator
-// -------------------------------
-async function generatePositionsForClass(className) {
-  const qRef = query(collection(db, "students"), where("class", "==", className));
-  const snap = await getDocs(qRef);
-  const students = [];
-
-  for (const docu of snap.docs) {
-    const student = docu.data();
-    const results = await listResults(student.id);
-    const totalMarks = results.reduce((sum, r) => sum + (r.total || 0), 0);
-    students.push({ id: student.id, totalMarks });
-  }
-
-  students.sort((a, b) => b.totalMarks - a.totalMarks);
-  for (let i = 0; i < students.length; i++) {
-    const position = i + 1;
-    await updateDoc(doc(db, "students", students[i].id), { position });
-  }
-}
-async function generatePositionsAllClasses() {
-  try {
-    for (const c of CLASS_OPTIONS) {
-      await generatePositionsForClass(c.value);
-    }
-    alert("✅ Positions generated for all classes!");
-  } catch (err) {
-    console.error("Error generating positions:", err);
-    alert("Error generating positions. Check console.");
-  }
-}
-
-// -------------------------------
-// Errors
-// -------------------------------
-function showError(elementId, message) {
-  const el = document.getElementById(elementId);
-  if (!el) return;
-  el.textContent = message;
-  el.classList.add('show');
-}
-function hideError(elementId) {
-  const el = document.getElementById(elementId);
-  if (!el) return;
-  el.classList.remove('show');
-}
-
-// -------------------------------
-// Modal close on outside click
-// -------------------------------
-const editModal = document.getElementById('edit-modal');
-if (editModal) {
-  editModal.addEventListener('click', (ev) => {
-    if (ev.target === editModal) closeEditModal();
+async function snapshotOldResults(oldId,newId){
+  const resSnap=await getDocs(collection(db,"students",oldId,"results"));
+  const writes=[];
+  resSnap.forEach(r=>{
+    const data=r.data();
+    const historyResRef=doc(db,"students",newId,"history",oldId,"results",r.id);
+    writes.push(setDoc(historyResRef,data));
   });
+  await Promise.all(writes);
 }
 
-// -------------------------------
-// Expose functions globally
-// -------------------------------
-Object.assign(window, {
-  showStudentLogin,
-  showAdminLogin,
-  showLanding,
+async function promoteSingleStudent(studentId){
+  const sRef=doc(db,"students",studentId); const sSnap=await getDoc(sRef);
+  if(!sSnap.exists()) return alert("Student not found.");
+  const s=sSnap.data(); const next=nextClass(s.class);
+  if(!next) return alert("🎓 Final class reached (Thanawiyah).");
+
+
+
+  const newId=await nextMatricForClass(next);
+  const newRef=doc(db,"students",newId);
+  await setDoc(newRef,{ id:newId, name:s.name, class:next, fee:s.fee||0, paid:s.paid||0, password:s.password||randomPassword(), year:CURRENT_YEAR, createdAt:serverTimestamp(), updatedAt:serverTimestamp() });
+  await setDoc(doc(db,"students",newId,"history",studentId),{ id:studentId, name:s.name, class:s.class, fee:s.fee||0, paid:s.paid||0, password:s.password||null, year:s.year||null, promotedAt:serverTimestamp() });
+  await snapshotOldResults(studentId,newId);
+  await deleteDoc(sRef);
+
+  alert(`✅ Promoted: ${s.name}\nOld: ${studentId} (${displayClass(s.class)})\nNew: ${newId} (${displayClass(next)})`);
+  await updateStudentsTable(); await updateStudentsAutocomplete();
+}
+
+nextMatricForClass('Ibtidaiyah').then(console.log).catch(console.error);
+
+
+async function promoteEntireClass(classValue){
+  if(!isValidClass(classValue)) return alert("Select a valid class.");
+  const next=nextClass(classValue); if(!next) return alert("This class is the final level — cannot promote further.");
+  const qRef=query(collection(db,"students"), where("class","==",classValue));
+  const snap=await getDocs(qRef); if(snap.empty) return alert("No students found in this class.");
+  if(!confirm(`Promote ALL students in ${displayClass(classValue)} to ${displayClass(next)}?`)) return;
+  for(const d of snap.docs){ try{ await promoteSingleStudent(d.id); }catch(e){ console.error("Promotion failed for", d.id, e); } }
+  alert(`✅ Finished promoting ${displayClass(classValue)}.`);
+  await updateStudentsTable(); await updateStudentsAutocomplete();
+}
+
+// ===============================
+// ⚠️ Error helpers
+// ===============================
+function showError(id,msg){ const el=document.getElementById(id); if(!el) return; el.textContent=msg; el.classList.add('show'); }
+function hideError(id){ const el=document.getElementById(id); if(!el) return; el.classList.remove('show'); }
+
+// ===============================
+// 🪟 Expose to window (onclick etc.)
+// ===============================
+Object.assign(window,{
+  // nav
+  showStudentLogin, showAdminLogin, showLanding, showTab,
+  // student side
   lookupStudent,
-  adminLogin,
-  adminLogout,
-  showTab,
-  registerStudent,
-  recordResults,
-  generateReceipt,
-  generateReceiptForStudent,
-  printReceipt,
-  closeEditModal,
-  saveStudentEdit,
-  editStudent,
-  deleteStudent,
-  updateStudentsTable,
-  updateStudentsAutocomplete,
-  generatePositionsAllClasses
+  // auth
+  adminLogin, adminLogout,
+  // registration & results
+  registerStudent, recordResults,
+  // receipt
+  generateReceipt, generateReceiptForStudent, printReceipt,
+  // table
+  updateStudentsTable, updateStudentsAutocomplete,
+  // edit
+  editStudent, saveStudentEdit, deleteStudent, closeEditModal,
+  // positions
+  generatePositionsAllClasses,
+  // promotions
+  promoteSingleStudent, promoteEntireClass
 });
 
-
-
-
-
-
-
+// ===============================
+// 🚀 Boot
+// ===============================
+document.addEventListener('DOMContentLoaded', ()=>{
+  populateClassSelects();
+});
+// ---- DEV CONSOLE LOGGER (safe) ----
+window.addEventListener('error', (e) => {
+  console.group('%cGlobal Error', 'color:#f33');
+  console.error(e.error || e.message);
+  console.log('at', e.filename, 'line:', e.lineno, 'col:', e.colno);
+  console.groupEnd();
+});
+window.addEventListener('unhandledrejection', (e) => {
+  console.group('%cUnhandled Promise Rejection', 'color:#f33');
+  console.error(e.reason);
+  console.groupEnd();
+});
