@@ -1,3 +1,4 @@
+
 // --- Firebase (CDN) ---
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
 import {
@@ -8,7 +9,9 @@ import {
   collection, getDocs, query, orderBy, serverTimestamp, limit, where, runTransaction
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-// --- Firebase config ---
+/* =========================
+   🔥 Firebase init
+========================= */
 const firebaseConfig = {
   apiKey: "AIzaSyAFdfON4KABa8pT60ACBdwAIO6EgarO5zs",
   authDomain: "ginna-b79aa.firebaseapp.com",
@@ -17,16 +20,14 @@ const firebaseConfig = {
   messagingSenderId: "240601294134",
   appId: "1:240601294134:web:507ffc996d941ef1583f97"
 };
-
-// --- Init Firebase ---
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db   = getFirestore(app);
 console.log("✅ Firebase connected:", firebaseConfig.projectId);
 
-// ===============================
-// 📅 YEAR & CLASS MODEL
-// ===============================
+/* =========================
+   📅 Year & classes
+========================= */
 const CURRENT_YEAR = new Date().getFullYear();
 
 const CLASS_OPTIONS = [
@@ -54,35 +55,97 @@ function getClassCode(v){ return CLASS_CODES[v] || ""; }
 function displayClass(v){ return CLASS_LABELS[v] || v || ""; }
 function isValidClass(v){ return !!CLASS_CODES[v]; }
 
-// ===============================
-// 🧰 HELPERS
-// ===============================
-function randomPassword(){
-  const letters="abcdefghijklmnopqrstuvwxyz";
-  return Array.from({length:3},()=>letters[Math.floor(Math.random()*letters.length)]).join("");
+/* =========================
+   ✨ Tiny UI helpers (cute)
+========================= */
+// Toasts (non-blocking alerts)
+(function ensureToastHost(){
+  if (document.getElementById('toast-host')) return;
+  const host = document.createElement('div');
+  host.id = 'toast-host';
+  host.style.cssText = `
+    position:fixed; right:14px; bottom:14px; z-index:9999; display:flex; flex-direction:column; gap:8px;
+  `;
+  document.body.appendChild(host);
+})();
+function toast(msg, type="info", ms=2500){
+  const el = document.createElement('div');
+  el.role = "status";
+  el.style.cssText = `
+    max-width:min(92vw, 420px);
+    background:${type==="error" ? "#ffeded" : type==="ok" ? "#e9fff1" : "#eef3ff"};
+    color:${type==="error" ? "#7a1a1a" : type==="ok" ? "#105c2f" : "#243872"};
+    border:1px solid ${type==="error" ? "#ffbfbf" : type==="ok" ? "#b8f1cd" : "#cfd9ff"};
+    border-radius:10px; padding:12px 14px; box-shadow:0 6px 20px rgba(0,0,0,.13);
+    font: 500 14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    transform:translateY(10px); opacity:0; transition:.18s ease;
+  `;
+  el.textContent = msg;
+  document.getElementById('toast-host').appendChild(el);
+  requestAnimationFrame(()=>{ el.style.opacity="1"; el.style.transform="translateY(0)"; });
+  setTimeout(()=>{ el.style.opacity="0"; el.style.transform="translateY(10px)"; 
+    setTimeout(()=> el.remove(), 180);
+  }, ms);
 }
-function ordinalSuffix(i){ const j=i%10,k=i%100; if(j===1&&k!==11)return i+"st"; if(j===2&&k!==12)return i+"nd"; if(j===3&&k!==13)return i+"rd"; return i+"th"; }
-function setResultsNotice(show,text){
-  const el=document.getElementById('results-notice');
-  if(!el) return;
-  if (text) el.textContent = text;
-  el.style.display = show ? 'block':'none';
-}
+
+// Button loading state
 function setLoading(el,isLoading,textWhenDone){
   if(!el) return;
   el.disabled = !!isLoading;
   if(isLoading){
     el.dataset.oldText = el.textContent;
     el.textContent = 'Please wait…';
+    el.style.opacity = "0.7";
   }else{
     el.textContent = textWhenDone || el.dataset.oldText || el.textContent;
+    el.style.opacity = "1";
   }
 }
+
+// Status notice in student results
+function setResultsNotice(show,text){
+  const el=document.getElementById('results-notice');
+  if(!el) return;
+  if (text) el.textContent = text;
+  el.classList.toggle('hidden', !show);
+}
+
+// Little “back to top” button (auto-injected)
+(function makeTopBtn(){
+  if (document.getElementById('scrollTopBtn')) return;
+  const b = document.createElement('button');
+  b.id = 'scrollTopBtn';
+  b.textContent = '↑';
+  Object.assign(b.style, {
+    position:'fixed', left:'14px', bottom:'14px', width:'36px', height:'36px',
+    borderRadius:'999px', border:'1px solid #cde', background:'#fff', cursor:'pointer',
+    boxShadow:'0 6px 20px rgba(0,0,0,.12)', zIndex:9998, opacity:'0', pointerEvents:'none',
+    transition:'opacity .2s'
+  });
+  b.title = 'Scroll to top';
+  b.onclick = ()=> window.scrollTo({top:0, behavior:'smooth'});
+  document.body.appendChild(b);
+  window.addEventListener('scroll', ()=> {
+    const show = window.scrollY > 300;
+    b.style.opacity = show ? '1' : '0';
+    b.style.pointerEvents = show ? 'auto' : 'none';
+  });
+})();
+
+/* =========================
+   🧰 Other helpers
+========================= */
+function randomPassword(){
+  const letters="abcdefghijklmnopqrstuvwxyz";
+  return Array.from({length:3},()=>letters[Math.floor(Math.random()*letters.length)]).join("");
+}
+function ordinalSuffix(i){ const j=i%10,k=i%100; if(j===1&&k!==11)return i+"st"; if(j===2&&k!==12)return i+"nd"; if(j===3&&k!==13)return i+"rd"; return i+"th"; }
+
 const busy = { register:false, recordSingle:false, lookupTable:false, saveAll:false };
 
-// ===============================
-// 🧭 NAVIGATION
-// ===============================
+/* =========================
+   🧭 Navigation
+========================= */
 function hideAllPages(){ document.querySelectorAll('.page').forEach(p=>p.classList.remove('active')); }
 function showLanding(){ hideAllPages(); document.getElementById('landing-page')?.classList.add('active'); }
 function showStudentLogin(){
@@ -106,9 +169,9 @@ function showAdminDashboard(){
   initClassResultsToggle();
 }
 
-// ===============================
-// 👤 AUTH (Admin)
-// ===============================
+/* =========================
+   👤 Auth (admin)
+========================= */
 let isAdminLoggedIn=false; let currentAdmin=null;
 
 async function adminLogin(e){
@@ -118,11 +181,18 @@ async function adminLogin(e){
   try{
     const cred=await signInWithEmailAndPassword(auth,email,password);
     const adminSnap=await getDoc(doc(db,"admins",cred.user.uid));
-    if(!adminSnap.exists() || !adminSnap.data().active){ await signOut(auth); throw new Error("No active admin profile"); }
-    currentAdmin={ uid:cred.user.uid, ...adminSnap.data() }; isAdminLoggedIn=true; showAdminDashboard();
-  }catch(err){ console.error(err); showError('admin-error',"Login failed."); }
+    if(!adminSnap.exists() || !adminSnap.data().active){ await signOut(auth); throw new Error("No active admin profile."); }
+    currentAdmin={ uid:cred.user.uid, ...adminSnap.data() };
+    isAdminLoggedIn=true;
+    showAdminDashboard();
+    toast("Welcome back 👋", "ok", 1600);
+  }catch(err){
+    console.error(err);
+    showError('admin-error',"Login failed.");
+    toast("Admin login failed", "error");
+  }
 }
-async function adminLogout(){ await signOut(auth); isAdminLoggedIn=false; currentAdmin=null; showLanding(); }
+async function adminLogout(){ await signOut(auth); isAdminLoggedIn=false; currentAdmin=null; showLanding(); toast("Logged out", "info", 1200); }
 
 onAuthStateChanged(auth, async (user)=>{
   if(user){
@@ -134,29 +204,39 @@ onAuthStateChanged(auth, async (user)=>{
   }else{ showAdminLogin(); }
 });
 
-// ===============================
-// 📑 TABS
-// ===============================
+/* =========================
+   📑 Tabs
+========================= */
+/* ===== Tabs ===== */
 function showTab(tabName, btnEl = null) {
+  // switch panes
   document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-  document.getElementById(`${tabName}-tab`)?.classList.add('active');
+  const pane = document.getElementById(`${tabName}-tab`);
+  if (pane) pane.classList.add('active');
 
+  // switch buttons
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   if (btnEl) btnEl.classList.add('active');
 
-  // optional: refresh data when entering certain tabs
-  if (tabName === 'students') updateStudentsTable();
-  if (tabName === 'results' || tabName === 'receipt') updateStudentsAutocomplete();
+  // optional refreshes
+  if (tabName === 'students') updateStudentsTable?.();
+  if (tabName === 'results' || tabName === 'receipt') updateStudentsAutocomplete?.();
 }
 
+// bind once on load
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => showTab(btn.dataset.tab, btn));
 });
 
+// ensure a default tab is visible (in case classes got out of sync)
+document.addEventListener('DOMContentLoaded', () => {
+  const activeBtn = document.querySelector('.tab-btn.active') || document.querySelector('.tab-btn');
+  if (activeBtn) showTab(activeBtn.dataset.tab, activeBtn);
+});
 
-// ===============================
-// 🔒 RESULTS VISIBILITY (global + per class)
-// ===============================
+/* =========================
+   🔒 Results visibility
+========================= */
 const SETTINGS_GLOBAL_REF = doc(db,"settings","global");
 async function ensureGlobalSettingsDoc(){
   const s=await getDoc(SETTINGS_GLOBAL_REF);
@@ -181,7 +261,7 @@ async function initAdminResultsToggle(){
       const val=!!toggle.checked;
       await writeGlobalResultsPublished(val);
       if(status) status.textContent = val ? "Published — students can see results." : "Hidden — students CANNOT see results yet.";
-      alert(val ? "Results are now visible globally." : "Results are now hidden globally.");
+      toast(val ? "Results are now visible globally." : "Results are now hidden globally.", "ok");
     };
   }catch(e){ console.error("Toggle init failed:",e); }
 }
@@ -194,34 +274,67 @@ async function initClassResultsToggle(){
     const tr=document.createElement('tr');
     tr.innerHTML=`<td>${c.label}</td><td><input type="checkbox" ${published?'checked':''}></td>`;
     const checkbox=tr.querySelector('input');
-    checkbox.onchange=async()=>{ await setDoc(ref,{ resultsPublished:checkbox.checked, updatedAt:serverTimestamp() },{ merge:true }); alert(`${c.label} results are now ${checkbox.checked?'VISIBLE':'HIDDEN'}`); };
+    checkbox.onchange=async()=>{ 
+      await setDoc(ref,{ resultsPublished:checkbox.checked, updatedAt:serverTimestamp() },{ merge:true }); 
+      toast(`${c.label} results are now ${checkbox.checked?'VISIBLE':'HIDDEN'}`, "ok");
+    };
     table.appendChild(tr);
   }
 }
 
-// ===============================
-// 📝 REGISTRATION (with atomic counter)
-// ===============================
-async function nextMatricForClass(clsValue){
-  const code=getClassCode(clsValue); if(!code) throw new Error("Invalid class code.");
-  const year=new Date().getFullYear(); // always live year
-  const counterRef=doc(db,"counters",`${year}-${code}`);
-  return await runTransaction(db, async (tx)=>{
-    const snap=await tx.get(counterRef);
-    let seq;
-    if(!snap.exists()){
-      seq=1;
-      tx.set(counterRef,{ next:2, createdAt:serverTimestamp(), updatedAt:serverTimestamp() });
-    }else{
-      const curr=snap.data()?.next ?? 1;
-      seq=curr;
-      tx.update(counterRef,{ next:curr+1, updatedAt:serverTimestamp() });
+/* =========================
+   🧮 Matric number generator
+   — always follows the last existing number (even after deletions)
+========================= */
+async function findMaxSerialForClassYear(clsValue, year) {
+  let maxNum = 0;
+  const qRef = query(
+    collection(db, "students"),
+    where("class", "==", clsValue),
+    where("year", "==", year)
+  );
+  const snap = await getDocs(qRef);
+  snap.forEach(docSnap => {
+    const parts = (docSnap.id || "").split("-");
+    const num = parseInt(parts[2], 10);
+    if (!isNaN(num) && num > maxNum) maxNum = num;
+  });
+  return maxNum;
+}
+
+async function nextMatricForClass(clsValue) {
+  const code = getClassCode(clsValue);
+  if (!code) throw new Error("Invalid class code.");
+  const year = new Date().getFullYear();
+  const counterRef = doc(db, "counters", `${year}-${code}`);
+
+  // Real highest existing serial + 1
+  const desiredSeq = Math.max(1, (await findMaxSerialForClassYear(clsValue, year)) + 1);
+
+  return await runTransaction(db, async (tx) => {
+    const snap = await tx.get(counterRef);
+    const seq = desiredSeq; // always trust what exists in students
+
+    if (!snap.exists()) {
+      tx.set(counterRef, {
+        next: seq + 1,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+    } else {
+      tx.update(counterRef, {
+        next: seq + 1,
+        updatedAt: serverTimestamp()
+      });
     }
-    const serial=String(seq).padStart(3,"0");
-    return `MG${code}-${year}-${serial}`; // e.g. MGIBT-2025-001
+    const serial = String(seq).padStart(3, "0");
+    return `MG${code}-${year}-${serial}`;
   });
 }
 
+/* =========================
+   📝 Registration
+========================= */
 async function registerStudent(e){
   e.preventDefault();
   if (busy.register) return;
@@ -232,27 +345,34 @@ async function registerStudent(e){
     const className=document.getElementById('reg-class').value;
     let fee=parseInt(document.getElementById('reg-fee').value);
     const password=(document.getElementById('reg-pass')?.value.trim() || randomPassword());
-    if(!name || !className || isNaN(fee)) { alert("⚠️ Fill all fields."); return; }
-    if(!isValidClass(className)) { alert("⚠️ Select a valid class."); return; }
+    if(!name || !className || isNaN(fee)) { toast("Fill all fields.", "error"); return; }
+    if(!isValidClass(className)) { toast("Select a valid class.", "error"); return; }
     if(fee<0) fee=0;
 
     const id=await nextMatricForClass(className);
     const ref=doc(db,"students",id);
     const snap=await getDoc(ref);
-    if(snap.exists()) { alert("❌ Matric already exists. Try again."); return; }
+    if(snap.exists()) { toast("Matric already exists. Try again.", "error"); return; }
 
     await setDoc(ref,{ id,name,class:className,fee,paid:0,password, year:CURRENT_YEAR, createdAt:serverTimestamp(),updatedAt:serverTimestamp() });
     document.getElementById('register-form').reset();
     await updateStudentsTable();
     await updateStudentsAutocomplete();
-    alert(`✅ Student Registered!\nID: ${id}\nPassword: ${password}`);
-  }catch(err){ console.error(err); alert("❌ Failed to register."); }
+
+    // cute: auto-copy id+password
+    try {
+      await navigator.clipboard.writeText(`ID: ${id}\nPassword: ${password}`);
+      toast(`Student Registered! 📋 Copied:\n${id}`, "ok", 3000);
+    } catch {
+      toast(`Student Registered!\nID: ${id}`, "ok", 2500);
+    }
+  }catch(err){ console.error(err); toast("Failed to register.", "error"); }
   finally{ busy.register=false; setLoading(btn,false); }
 }
 
-// ===============================
-// 🧮 RESULTS (single)
-// ===============================
+/* =========================
+   🧮 Results (single)
+========================= */
 function calculateGrade(total){ if(total>=70)return'A'; if(total>=60)return'B'; if(total>=50)return'C'; if(total>=45)return'D'; if(total>=40)return'E'; return'F'; }
 
 async function recordResults(e){
@@ -265,24 +385,24 @@ async function recordResults(e){
     const subject=document.getElementById('result-subject').value.trim();
     const ca=parseInt(document.getElementById('result-ca').value);
     const exam=parseInt(document.getElementById('result-exam').value);
-    if(!studentId || !subject || isNaN(ca) || isNaN(exam)){ alert("⚠️ Complete all fields"); return; }
+    if(!studentId || !subject || isNaN(ca) || isNaN(exam)){ toast("Complete all fields.", "error"); return; }
 
     const sRef=doc(db,"students",studentId); const sSnap=await getDoc(sRef);
-    if(!sSnap.exists()){ alert("❌ Student not found"); return; }
+    if(!sSnap.exists()){ toast("Student not found.", "error"); return; }
 
     const total=ca+exam; const grade=calculateGrade(total);
     const rRef=doc(db,"students",studentId,"results",subject);
     await setDoc(rRef,{ subject,ca,exam,total,grade, date:new Date().toLocaleDateString('en-NG'), recordedAt:serverTimestamp() },{ merge:true });
 
     document.getElementById('results-form').reset();
-    alert("✅ Result saved!");
-  }catch(err){ console.error(err); alert("❌ Failed to save result"); }
+    toast("Result saved ✅", "ok");
+  }catch(err){ console.error(err); toast("Failed to save result.", "error"); }
   finally{ busy.recordSingle=false; setLoading(btn,false); }
 }
 
-// ===============================
-// 📊 RESULTS TABLE (lookup + save-all)
-// ===============================
+/* =========================
+   📊 Results table (lookup + save all)
+========================= */
 let currentLookupStudent=null;
 
 document.getElementById('lookup-btn')?.addEventListener('click', async (e)=>{
@@ -290,16 +410,17 @@ document.getElementById('lookup-btn')?.addEventListener('click', async (e)=>{
   try{
     busy.lookupTable=true; setLoading(e.currentTarget,true);
     const studentId=document.getElementById('record-student-id').value.trim();
-    if(!studentId){ alert("Enter Student ID"); return; }
+    if(!studentId){ toast("Enter Student ID.", "error"); return; }
     const sRef=doc(db,"students",studentId); const sSnap=await getDoc(sRef);
-    if(!sSnap.exists()){ alert("❌ Student not found"); return; }
+    if(!sSnap.exists()){ toast("Student not found.", "error"); return; }
 
     currentLookupStudent={ id:studentId, ...sSnap.data() };
     document.getElementById('record-student-name').textContent=currentLookupStudent.name;
     document.getElementById('record-student-class').textContent=displayClass(currentLookupStudent.class);
     document.getElementById('record-student-info').style.display='block';
     await buildResultsTableForStudent(currentLookupStudent);
-  }catch(err){ console.error(err); alert("❌ Lookup failed"); }
+    toast("Loaded subjects for entry.", "ok", 1400);
+  }catch(err){ console.error(err); toast("Lookup failed.", "error"); }
   finally{ busy.lookupTable=false; setLoading(e.currentTarget,false,'Lookup'); }
 });
 
@@ -327,15 +448,15 @@ async function buildResultsTableForStudent(student){
     tbody.appendChild(tr);
   });
 
-  document.getElementById('results-table-container')?.style && (document.getElementById('results-table-container').style.display='block');
-  document.getElementById('save-results-row')?.style && (document.getElementById('save-results-row').style.display='block');
+  document.getElementById('results-table-container').style.display='block';
+  document.getElementById('save-results-row').style.display='block';
 }
 
 document.getElementById('save-results-btn')?.addEventListener('click', async (e)=>{
   if (busy.saveAll) return;
   try{
     busy.saveAll=true; setLoading(e.currentTarget,true);
-    if(!currentLookupStudent){ alert("❌ No student selected"); return; }
+    if(!currentLookupStudent){ toast("No student selected.", "error"); return; }
     const tbody=document.getElementById('record-results-tbody');
     const rows=tbody?.querySelectorAll('tr') || [];
     const writes=[];
@@ -348,14 +469,14 @@ document.getElementById('save-results-btn')?.addEventListener('click', async (e)
       writes.push(setDoc(ref,{ subject,ca,exam,total,grade, date:new Date().toLocaleDateString('en-NG'), recordedAt:serverTimestamp() },{ merge:true }));
     }
     await Promise.all(writes);
-    alert("✅ All results saved successfully!");
-  }catch(err){ console.error(err); alert("❌ Some results failed to save"); }
+    toast("All results saved ✅", "ok");
+  }catch(err){ console.error(err); toast("Some results failed to save.", "error"); }
   finally{ busy.saveAll=false; setLoading(e.currentTarget,false,'Save All'); }
 });
 
-// ===============================
-// 🏆 POSITIONS
-// ===============================
+/* =========================
+   🏆 Positions
+========================= */
 async function listResults(studentId){
   const qRef=query(collection(db,"students",studentId,"results"), orderBy("subject"));
   const snap=await getDocs(qRef); const arr=[]; snap.forEach(d=>arr.push(d.data())); return arr;
@@ -383,13 +504,13 @@ async function generatePositionsForClass(className){
 async function generatePositionsAllClasses(){
   try{
     for(const c of CLASS_OPTIONS){ await generatePositionsForClass(c.value); }
-    alert("✅ Positions generated for all classes!");
-  }catch(e){ console.error(e); alert("❌ Failed to generate positions"); }
+    toast("Positions generated for all classes ✅", "ok");
+  }catch(e){ console.error(e); toast("Failed to generate positions.", "error"); }
 }
 
-// ===============================
-// 👤 STUDENT LOOKUP (student side)
-// ===============================
+/* =========================
+   👤 Student lookup (student side)
+========================= */
 async function lookupStudent(e){
   e.preventDefault();
   const studentId=document.getElementById('student-id')?.value.trim();
@@ -429,7 +550,7 @@ function showStudentProfile(student, results=[]){
   const pill=document.getElementById('fee-status'); pill.className='status-pill';
   if(outstanding===0){ pill.classList.add('paid'); pill.textContent='PAID'; }
   else if(paid>0){ pill.classList.add('partial'); pill.textContent='PARTIAL'; }
-  else{ pill.classList.add('unpaid'); pill.textContent='UNPAID'; }
+  else{ pill.classList.add('unpaid');  pill.textContent='UNPAID'; }
 
   const tbody=document.getElementById('results-tbody'); tbody.innerHTML='';
   if(results.length){
@@ -454,15 +575,15 @@ function showStudentProfile(student, results=[]){
   document.getElementById('student-profile').style.display='block';
 }
 
-// ===============================
-// 🧾 RECEIPT
-// ===============================
+/* =========================
+   🧾 Receipt
+========================= */
 async function generateReceipt(e){ e.preventDefault(); const id=document.getElementById('receipt-student-id').value.trim(); await buildAndShowReceipt(id); }
 async function generateReceiptForStudent(id){ showTab('receipt'); document.getElementById('receipt-student-id').value=id; await buildAndShowReceipt(id); }
 
 async function buildAndShowReceipt(studentId){
-  if(!studentId) return alert('Please enter a Student ID.');
-  const sSnap=await getDoc(doc(db,"students",studentId)); if(!sSnap.exists()) return alert('Student not found!');
+  if(!studentId) return toast('Please enter a Student ID.', "error");
+  const sSnap=await getDoc(doc(db,"students",studentId)); if(!sSnap.exists()) return toast('Student not found!', "error");
   const s=sSnap.data(); const latest=await getLatestResult(studentId); showReceiptView(s,latest);
 }
 function showReceiptView(student, latest=null){
@@ -485,14 +606,16 @@ function showReceiptView(student, latest=null){
 }
 function printReceipt(){ window.print(); }
 
-// ===============================
-// 📋 STUDENTS TABLE (Admin)
-// ===============================
+/* =========================
+   📋 Students table (admin)
+========================= */
 async function updateStudentsTable(){
   const tbody=document.getElementById('students-tbody'); if(!tbody) return; tbody.innerHTML='';
   const snap=await getDocs(collection(db,"students"));
-  snap.forEach(d=>{
-    const s=d.data();
+  // sort by ID ascending for neatness
+  const list=[]; snap.forEach(d=>list.push(d.data()));
+  list.sort((a,b)=> (a.id||'').localeCompare(b.id||''));
+  list.forEach(s=>{
     const fee=Number(s.fee)||0, paid=Number(s.paid)||0, out=Math.max(fee-paid,0);
     const tr=document.createElement('tr');
     tr.innerHTML=`
@@ -516,18 +639,20 @@ async function updateStudentsAutocomplete(){
   const list2=document.getElementById('students-list-receipt');
   if(!list1 || !list2) return;
   const snap=await getDocs(collection(db,"students")); let opts='';
-  snap.forEach(d=>{ const s=d.data(); opts += `<option value="${s.id}"></option>`; });
+  const ids = [];
+  snap.forEach(d=> ids.push(d.id));
+  ids.sort().forEach(id => { opts += `<option value="${id}"></option>`; });
   list1.innerHTML=opts; list2.innerHTML=opts;
 }
 
-// ===============================
-// ✏️ EDIT / SAVE / DELETE
-// ===============================
+/* =========================
+   ✏️ Edit / Save / Delete
+========================= */
 let currentEditingStudentId=null;
 
 async function editStudent(studentId){
   const ref=doc(db,"students",studentId); const snap=await getDoc(ref);
-  if(!snap.exists()) return alert("Student not found");
+  if(!snap.exists()) return toast("Student not found.", "error");
   const s=snap.data(); currentEditingStudentId=studentId;
   document.getElementById('edit-name').value=s.name||'';
   document.getElementById('edit-class').value=isValidClass(s.class)? s.class : CLASS_OPTIONS[0].value;
@@ -543,13 +668,13 @@ async function saveStudentEdit(e){
   const cls=document.getElementById('edit-class').value;
   let fee=parseInt(document.getElementById('edit-fee').value);
   let paid=parseInt(document.getElementById('edit-paid').value);
-  if(!isValidClass(cls)) return alert('Please select a valid class.');
+  if(!isValidClass(cls)) return toast('Select a valid class.', "error");
   fee=isNaN(fee)?0:fee; paid=isNaN(paid)?0:paid; if(paid>fee) paid=fee;
   await updateDoc(doc(db,"students",currentEditingStudentId),{ name, class:cls, fee, paid, updatedAt:serverTimestamp() });
-  await updateStudentsTable(); await updateStudentsAutocomplete(); closeEditModal(); alert('✅ Student updated!');
+  await updateStudentsTable(); await updateStudentsAutocomplete(); closeEditModal(); toast('Student updated ✅', "ok");
 }
 async function deleteStudent(studentId){
-  if(!confirm('Are you sure you want to delete this student?')) return;
+  if(!confirm('Delete this student?')) return;
   try{
     const rSnap=await getDocs(collection(db,"students",studentId,"results"));
     const deletions=[]; rSnap.forEach(d=>deletions.push(deleteDoc(doc(db,"students",studentId,"results",d.id))));
@@ -557,11 +682,12 @@ async function deleteStudent(studentId){
   }catch{}
   await deleteDoc(doc(db,"students",studentId));
   await updateStudentsTable(); await updateStudentsAutocomplete();
+  toast('Student deleted', "info");
 }
 
-// ===============================
-// ⬆️ PROMOTION
-// ===============================
+/* =========================
+   ⬆️ Promotion
+========================= */
 function nextClass(current){ if(current==="Ibtidaiyah")return"Idadiyah"; if(current==="Idadiyah")return"Thanawiyah"; return null; }
 
 async function snapshotOldResults(oldId,newId){
@@ -577,11 +703,9 @@ async function snapshotOldResults(oldId,newId){
 
 async function promoteSingleStudent(studentId){
   const sRef=doc(db,"students",studentId); const sSnap=await getDoc(sRef);
-  if(!sSnap.exists()) return alert("Student not found.");
+  if(!sSnap.exists()) return toast("Student not found.", "error");
   const s=sSnap.data(); const next=nextClass(s.class);
-  if(!next) return alert("🎓 Final class reached (Thanawiyah).");
-
-
+  if(!next) return toast("🎓 Final class reached (Thanawiyah).", "info");
 
   const newId=await nextMatricForClass(next);
   const newRef=doc(db,"students",newId);
@@ -590,33 +714,29 @@ async function promoteSingleStudent(studentId){
   await snapshotOldResults(studentId,newId);
   await deleteDoc(sRef);
 
-  alert(`✅ Promoted: ${s.name}\nOld: ${studentId} (${displayClass(s.class)})\nNew: ${newId} (${displayClass(next)})`);
+  toast(`Promoted: ${s.name}\nNew ID: ${newId}`, "ok", 2800);
   await updateStudentsTable(); await updateStudentsAutocomplete();
 }
-
-nextMatricForClass('Ibtidaiyah').then(console.log).catch(console.error);
-
 
 async function promoteEntireClass(classValue){
-  if(!isValidClass(classValue)) return alert("Select a valid class.");
-  const next=nextClass(classValue); if(!next) return alert("This class is the final level — cannot promote further.");
+  if(!isValidClass(classValue)) return toast("Select a valid class.", "error");
+  const next=nextClass(classValue); if(!next) return toast("This class is final — cannot promote further.", "info");
   const qRef=query(collection(db,"students"), where("class","==",classValue));
-  const snap=await getDocs(qRef); if(snap.empty) return alert("No students found in this class.");
+  const snap=await getDocs(qRef); if(snap.empty) return toast("No students found in this class.", "info");
   if(!confirm(`Promote ALL students in ${displayClass(classValue)} to ${displayClass(next)}?`)) return;
   for(const d of snap.docs){ try{ await promoteSingleStudent(d.id); }catch(e){ console.error("Promotion failed for", d.id, e); } }
-  alert(`✅ Finished promoting ${displayClass(classValue)}.`);
-  await updateStudentsTable(); await updateStudentsAutocomplete();
+  toast(`Finished promoting ${displayClass(classValue)}.`, "ok");
 }
 
-// ===============================
-// ⚠️ Error helpers
-// ===============================
+/* =========================
+   ⚠️ Error helpers
+========================= */
 function showError(id,msg){ const el=document.getElementById(id); if(!el) return; el.textContent=msg; el.classList.add('show'); }
 function hideError(id){ const el=document.getElementById(id); if(!el) return; el.classList.remove('show'); }
 
-// ===============================
-// 🪟 Expose to window (onclick etc.)
-// ===============================
+/* =========================
+   🌱 Expose to window
+========================= */
 Object.assign(window,{
   // nav
   showStudentLogin, showAdminLogin, showLanding, showTab,
@@ -638,13 +758,16 @@ Object.assign(window,{
   promoteSingleStudent, promoteEntireClass
 });
 
-// ===============================
-// 🚀 Boot
-// ===============================
+/* =========================
+   🚀 Boot
+========================= */
 document.addEventListener('DOMContentLoaded', ()=>{
   populateClassSelects();
 });
-// ---- DEV CONSOLE LOGGER (safe) ----
+
+/* =========================
+   🧪 Console error surfacing
+========================= */
 window.addEventListener('error', (e) => {
   console.group('%cGlobal Error', 'color:#f33');
   console.error(e.error || e.message);

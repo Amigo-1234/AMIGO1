@@ -780,3 +780,6 @@ tbody tr:hover {
   font-size: 1.1rem;
   color: #333;
 }
+.page{display:none}.page.active{display:block}
+.tab-content{display:none}.tab-content.active{display:block}
+.tab-btn.active{outline:2px solid rgba(0,0,0,.08)}
