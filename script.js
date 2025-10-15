@@ -1,9 +1,6 @@
-
 // --- Firebase (CDN) ---
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-import {
-  getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut
-} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 import {
   getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc,
   collection, getDocs, query, orderBy, serverTimestamp, limit, where, runTransaction
@@ -56,91 +53,46 @@ function displayClass(v){ return CLASS_LABELS[v] || v || ""; }
 function isValidClass(v){ return !!CLASS_CODES[v]; }
 
 /* =========================
-   ✨ Tiny UI helpers (cute)
+   ✨ Tiny UI helpers
 ========================= */
-// Toasts (non-blocking alerts)
 (function ensureToastHost(){
   if (document.getElementById('toast-host')) return;
   const host = document.createElement('div');
   host.id = 'toast-host';
-  host.style.cssText = `
-    position:fixed; right:14px; bottom:14px; z-index:9999; display:flex; flex-direction:column; gap:8px;
-  `;
+  host.style.cssText = `position:fixed; right:14px; bottom:14px; z-index:9999; display:flex; flex-direction:column; gap:8px;`;
   document.body.appendChild(host);
 })();
-function toast(msg, type="info", ms=2500){
+function toast(msg, type="info", ms=2300){
   const el = document.createElement('div');
   el.role = "status";
   el.style.cssText = `
-    max-width:min(92vw, 420px);
-    background:${type==="error" ? "#ffeded" : type==="ok" ? "#e9fff1" : "#eef3ff"};
-    color:${type==="error" ? "#7a1a1a" : type==="ok" ? "#105c2f" : "#243872"};
-    border:1px solid ${type==="error" ? "#ffbfbf" : type==="ok" ? "#b8f1cd" : "#cfd9ff"};
+    max-width:min(92vw,420px); background:${type==="error"?"#ffeded":type==="ok"?"#e9fff1":"#eef3ff"};
+    color:${type==="error"?"#7a1a1a":type==="ok"?"#105c2f":"#243872"};
+    border:1px solid ${type==="error"?"#ffbfbf":type==="ok"?"#b8f1cd":"#cfd9ff"};
     border-radius:10px; padding:12px 14px; box-shadow:0 6px 20px rgba(0,0,0,.13);
-    font: 500 14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Arial;
-    transform:translateY(10px); opacity:0; transition:.18s ease;
+    font: 500 14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Arial; transform:translateY(10px); opacity:0; transition:.18s ease;
   `;
   el.textContent = msg;
   document.getElementById('toast-host').appendChild(el);
   requestAnimationFrame(()=>{ el.style.opacity="1"; el.style.transform="translateY(0)"; });
-  setTimeout(()=>{ el.style.opacity="0"; el.style.transform="translateY(10px)"; 
-    setTimeout(()=> el.remove(), 180);
-  }, ms);
+  setTimeout(()=>{ el.style.opacity="0"; el.style.transform="translateY(10px)"; setTimeout(()=> el.remove(),180); }, ms);
 }
-
-// Button loading state
 function setLoading(el,isLoading,textWhenDone){
   if(!el) return;
   el.disabled = !!isLoading;
-  if(isLoading){
-    el.dataset.oldText = el.textContent;
-    el.textContent = 'Please wait…';
-    el.style.opacity = "0.7";
-  }else{
-    el.textContent = textWhenDone || el.dataset.oldText || el.textContent;
-    el.style.opacity = "1";
-  }
+  if(isLoading){ el.dataset.oldText=el.textContent; el.textContent='Please wait…'; el.style.opacity="0.7";}
+  else{ el.textContent=textWhenDone||el.dataset.oldText||el.textContent; el.style.opacity="1"; }
 }
-
-// Status notice in student results
 function setResultsNotice(show,text){
-  const el=document.getElementById('results-notice');
-  if(!el) return;
-  if (text) el.textContent = text;
+  const el=document.getElementById('results-notice'); if(!el) return;
+  if(text) el.textContent = text;
   el.classList.toggle('hidden', !show);
 }
-
-// Little “back to top” button (auto-injected)
-(function makeTopBtn(){
-  if (document.getElementById('scrollTopBtn')) return;
-  const b = document.createElement('button');
-  b.id = 'scrollTopBtn';
-  b.textContent = '↑';
-  Object.assign(b.style, {
-    position:'fixed', left:'14px', bottom:'14px', width:'36px', height:'36px',
-    borderRadius:'999px', border:'1px solid #cde', background:'#fff', cursor:'pointer',
-    boxShadow:'0 6px 20px rgba(0,0,0,.12)', zIndex:9998, opacity:'0', pointerEvents:'none',
-    transition:'opacity .2s'
-  });
-  b.title = 'Scroll to top';
-  b.onclick = ()=> window.scrollTo({top:0, behavior:'smooth'});
-  document.body.appendChild(b);
-  window.addEventListener('scroll', ()=> {
-    const show = window.scrollY > 300;
-    b.style.opacity = show ? '1' : '0';
-    b.style.pointerEvents = show ? 'auto' : 'none';
-  });
-})();
-
-/* =========================
-   🧰 Other helpers
-========================= */
 function randomPassword(){
   const letters="abcdefghijklmnopqrstuvwxyz";
   return Array.from({length:3},()=>letters[Math.floor(Math.random()*letters.length)]).join("");
 }
 function ordinalSuffix(i){ const j=i%10,k=i%100; if(j===1&&k!==11)return i+"st"; if(j===2&&k!==12)return i+"nd"; if(j===3&&k!==13)return i+"rd"; return i+"th"; }
-
 const busy = { register:false, recordSingle:false, lookupTable:false, saveAll:false };
 
 /* =========================
@@ -184,7 +136,7 @@ async function adminLogin(e){
     if(!adminSnap.exists() || !adminSnap.data().active){ await signOut(auth); throw new Error("No active admin profile."); }
     currentAdmin={ uid:cred.user.uid, ...adminSnap.data() };
     isAdminLoggedIn=true;
-    showAdminDashboard();
+    // IMPORTANT: do NOT call showAdminDashboard() here; let onAuthStateChanged handle it once.
     toast("Welcome back 👋", "ok", 1600);
   }catch(err){
     console.error(err);
@@ -207,35 +159,26 @@ onAuthStateChanged(auth, async (user)=>{
 /* =========================
    📑 Tabs
 ========================= */
-/* ===== Tabs ===== */
 function showTab(tabName, btnEl = null) {
-  // switch panes
   document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-  const pane = document.getElementById(`${tabName}-tab`);
-  if (pane) pane.classList.add('active');
+  document.getElementById(`${tabName}-tab`)?.classList.add('active');
 
-  // switch buttons
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   if (btnEl) btnEl.classList.add('active');
 
-  // optional refreshes
   if (tabName === 'students') updateStudentsTable?.();
   if (tabName === 'results' || tabName === 'receipt') updateStudentsAutocomplete?.();
 }
-
-// bind once on load
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => showTab(btn.dataset.tab, btn));
 });
-
-// ensure a default tab is visible (in case classes got out of sync)
 document.addEventListener('DOMContentLoaded', () => {
   const activeBtn = document.querySelector('.tab-btn.active') || document.querySelector('.tab-btn');
   if (activeBtn) showTab(activeBtn.dataset.tab, activeBtn);
 });
 
 /* =========================
-   🔒 Results visibility
+   🔒 Results visibility (with guards)
 ========================= */
 const SETTINGS_GLOBAL_REF = doc(db,"settings","global");
 async function ensureGlobalSettingsDoc(){
@@ -248,7 +191,11 @@ async function readGlobalResultsPublished(){
 async function writeGlobalResultsPublished(v){
   await setDoc(SETTINGS_GLOBAL_REF,{ resultsPublished:!!v, updatedAt:serverTimestamp() },{ merge:true });
 }
+
+let globalToggleInitialized = false;
 async function initAdminResultsToggle(){
+  if (globalToggleInitialized) return;
+  globalToggleInitialized = true;
   try{
     await ensureGlobalSettingsDoc();
     const toggle=document.getElementById('toggle-global-results');
@@ -265,34 +212,39 @@ async function initAdminResultsToggle(){
     };
   }catch(e){ console.error("Toggle init failed:",e); }
 }
+
+let classToggleRunToken = 0;
 async function initClassResultsToggle(){
   const table=document.getElementById('class-publish-table'); if(!table) return;
-  table.innerHTML='';
+
+  const myToken = ++classToggleRunToken;
+  table.innerHTML = '<tr><td colspan="2" class="muted">Loading…</td></tr>';
+
+  const rows = [];
   for(const c of CLASS_OPTIONS){
-    const ref=doc(db,"classes",c.value); const snap=await getDoc(ref);
+    const ref=doc(db,"classes",c.value);
+    const snap=await getDoc(ref);
     const published = snap.exists() ? !!snap.data().resultsPublished : false;
+
     const tr=document.createElement('tr');
     tr.innerHTML=`<td>${c.label}</td><td><input type="checkbox" ${published?'checked':''}></td>`;
     const checkbox=tr.querySelector('input');
-    checkbox.onchange=async()=>{ 
-      await setDoc(ref,{ resultsPublished:checkbox.checked, updatedAt:serverTimestamp() },{ merge:true }); 
+    checkbox.addEventListener('change', async()=>{
+      await setDoc(ref,{ resultsPublished:checkbox.checked, updatedAt:serverTimestamp() },{ merge:true });
       toast(`${c.label} results are now ${checkbox.checked?'VISIBLE':'HIDDEN'}`, "ok");
-    };
-    table.appendChild(tr);
+    });
+    rows.push(tr);
   }
+  if (myToken !== classToggleRunToken) return; // a newer run started—abort this one
+  table.replaceChildren(...rows);
 }
 
 /* =========================
    🧮 Matric number generator
-   — always follows the last existing number (even after deletions)
 ========================= */
 async function findMaxSerialForClassYear(clsValue, year) {
   let maxNum = 0;
-  const qRef = query(
-    collection(db, "students"),
-    where("class", "==", clsValue),
-    where("year", "==", year)
-  );
+  const qRef = query(collection(db,"students"), where("class","==",clsValue), where("year","==",year));
   const snap = await getDocs(qRef);
   snap.forEach(docSnap => {
     const parts = (docSnap.id || "").split("-");
@@ -301,31 +253,21 @@ async function findMaxSerialForClassYear(clsValue, year) {
   });
   return maxNum;
 }
-
 async function nextMatricForClass(clsValue) {
   const code = getClassCode(clsValue);
   if (!code) throw new Error("Invalid class code.");
   const year = new Date().getFullYear();
   const counterRef = doc(db, "counters", `${year}-${code}`);
 
-  // Real highest existing serial + 1
   const desiredSeq = Math.max(1, (await findMaxSerialForClassYear(clsValue, year)) + 1);
 
   return await runTransaction(db, async (tx) => {
     const snap = await tx.get(counterRef);
-    const seq = desiredSeq; // always trust what exists in students
-
+    const seq = desiredSeq; // always follow existing docs
     if (!snap.exists()) {
-      tx.set(counterRef, {
-        next: seq + 1,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      });
+      tx.set(counterRef, { next: seq + 1, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
     } else {
-      tx.update(counterRef, {
-        next: seq + 1,
-        updatedAt: serverTimestamp()
-      });
+      tx.update(counterRef, { next: seq + 1, updatedAt: serverTimestamp() });
     }
     const serial = String(seq).padStart(3, "0");
     return `MG${code}-${year}-${serial}`;
@@ -344,7 +286,8 @@ async function registerStudent(e){
     const name=document.getElementById('reg-name').value.trim();
     const className=document.getElementById('reg-class').value;
     let fee=parseInt(document.getElementById('reg-fee').value);
-    const password=(document.getElementById('reg-pass')?.value.trim() || randomPassword());
+    const rawPass=(document.getElementById('reg-pass')?.value.trim() || randomPassword());
+    const password=rawPass.toLowerCase();
     if(!name || !className || isNaN(fee)) { toast("Fill all fields.", "error"); return; }
     if(!isValidClass(className)) { toast("Select a valid class.", "error"); return; }
     if(fee<0) fee=0;
@@ -359,13 +302,8 @@ async function registerStudent(e){
     await updateStudentsTable();
     await updateStudentsAutocomplete();
 
-    // cute: auto-copy id+password
-    try {
-      await navigator.clipboard.writeText(`ID: ${id}\nPassword: ${password}`);
-      toast(`Student Registered! 📋 Copied:\n${id}`, "ok", 3000);
-    } catch {
-      toast(`Student Registered!\nID: ${id}`, "ok", 2500);
-    }
+    try { await navigator.clipboard.writeText(`ID: ${id}\nPassword: ${password}`); toast(`Student Registered! 📋 Copied:\n${id}`, "ok", 3000); }
+    catch { toast(`Student Registered!\nID: ${id}`, "ok", 2500); }
   }catch(err){ console.error(err); toast("Failed to register.", "error"); }
   finally{ busy.register=false; setLoading(btn,false); }
 }
@@ -404,7 +342,6 @@ async function recordResults(e){
    📊 Results table (lookup + save all)
 ========================= */
 let currentLookupStudent=null;
-
 document.getElementById('lookup-btn')?.addEventListener('click', async (e)=>{
   if (busy.lookupTable) return;
   try{
@@ -513,14 +450,30 @@ async function generatePositionsAllClasses(){
 ========================= */
 async function lookupStudent(e){
   e.preventDefault();
-  const studentId=document.getElementById('student-id')?.value.trim();
-  const password=document.getElementById('student-pass')?.value.trim();
-  if(!studentId || !password){ showError('student-error','⚠️ Please enter both Student ID and Password.'); document.getElementById('student-profile').style.display='none'; return; }
+  const studentId=(document.getElementById('student-id')?.value || '').trim();
+  const inputPass=(document.getElementById('student-pass')?.value || '').trim();
 
-  const sRef=doc(db,"students",studentId); const sSnap=await getDoc(sRef);
-  if(!sSnap.exists()){ showError('student-error','❌ Student ID not found.'); document.getElementById('student-profile').style.display='none'; return; }
+  if(!studentId || !inputPass){
+    showError('student-error','⚠️ Please enter both Student ID and Password.');
+    document.getElementById('student-profile').style.display='none';
+    return;
+  }
+
+  const sRef=doc(db,"students",studentId);
+  const sSnap=await getDoc(sRef);
+  if(!sSnap.exists()){
+    showError('student-error','❌ Student ID not found.');
+    document.getElementById('student-profile').style.display='none';
+    return;
+  }
   const student=sSnap.data();
-  if(!student.password || student.password !== password.toLowerCase()){ showError('student-error','❌ Invalid password.'); document.getElementById('student-profile').style.display='none'; return; }
+  const saved=(student.password||'').toLowerCase();
+  const entered=inputPass.toLowerCase();
+  if(!saved || saved!==entered){
+    showError('student-error','❌ Invalid password.');
+    document.getElementById('student-profile').style.display='none';
+    return;
+  }
 
   const published=await readGlobalResultsPublished();
   const classRef=doc(db,"classes",student.class); const classSnap=await getDoc(classRef);
@@ -550,7 +503,7 @@ function showStudentProfile(student, results=[]){
   const pill=document.getElementById('fee-status'); pill.className='status-pill';
   if(outstanding===0){ pill.classList.add('paid'); pill.textContent='PAID'; }
   else if(paid>0){ pill.classList.add('partial'); pill.textContent='PARTIAL'; }
-  else{ pill.classList.add('unpaid');  pill.textContent='UNPAID'; }
+  else{ pill.classList.add('unpaid'); pill.textContent='UNPAID'; }
 
   const tbody=document.getElementById('results-tbody'); tbody.innerHTML='';
   if(results.length){
@@ -612,7 +565,6 @@ function printReceipt(){ window.print(); }
 async function updateStudentsTable(){
   const tbody=document.getElementById('students-tbody'); if(!tbody) return; tbody.innerHTML='';
   const snap=await getDocs(collection(db,"students"));
-  // sort by ID ascending for neatness
   const list=[]; snap.forEach(d=>list.push(d.data()));
   list.sort((a,b)=> (a.id||'').localeCompare(b.id||''));
   list.forEach(s=>{
@@ -639,8 +591,7 @@ async function updateStudentsAutocomplete(){
   const list2=document.getElementById('students-list-receipt');
   if(!list1 || !list2) return;
   const snap=await getDocs(collection(db,"students")); let opts='';
-  const ids = [];
-  snap.forEach(d=> ids.push(d.id));
+  const ids = []; snap.forEach(d=> ids.push(d.id));
   ids.sort().forEach(id => { opts += `<option value="${id}"></option>`; });
   list1.innerHTML=opts; list2.innerHTML=opts;
 }
@@ -692,15 +643,9 @@ function nextClass(current){ if(current==="Ibtidaiyah")return"Idadiyah"; if(curr
 
 async function snapshotOldResults(oldId,newId){
   const resSnap=await getDocs(collection(db,"students",oldId,"results"));
-  const writes=[];
-  resSnap.forEach(r=>{
-    const data=r.data();
-    const historyResRef=doc(db,"students",newId,"history",oldId,"results",r.id);
-    writes.push(setDoc(historyResRef,data));
-  });
+  const writes=[]; resSnap.forEach(r=>{ const data=r.data(); const historyResRef=doc(db,"students",newId,"history",oldId,"results",r.id); writes.push(setDoc(historyResRef,data)); });
   await Promise.all(writes);
 }
-
 async function promoteSingleStudent(studentId){
   const sRef=doc(db,"students",studentId); const sSnap=await getDoc(sRef);
   if(!sSnap.exists()) return toast("Student not found.", "error");
@@ -717,7 +662,6 @@ async function promoteSingleStudent(studentId){
   toast(`Promoted: ${s.name}\nNew ID: ${newId}`, "ok", 2800);
   await updateStudentsTable(); await updateStudentsAutocomplete();
 }
-
 async function promoteEntireClass(classValue){
   if(!isValidClass(classValue)) return toast("Select a valid class.", "error");
   const next=nextClass(classValue); if(!next) return toast("This class is final — cannot promote further.", "info");
@@ -738,44 +682,128 @@ function hideError(id){ const el=document.getElementById(id); if(!el) return; el
    🌱 Expose to window
 ========================= */
 Object.assign(window,{
-  // nav
   showStudentLogin, showAdminLogin, showLanding, showTab,
-  // student side
   lookupStudent,
-  // auth
   adminLogin, adminLogout,
-  // registration & results
   registerStudent, recordResults,
-  // receipt
   generateReceipt, generateReceiptForStudent, printReceipt,
-  // table
   updateStudentsTable, updateStudentsAutocomplete,
-  // edit
   editStudent, saveStudentEdit, deleteStudent, closeEditModal,
-  // positions
   generatePositionsAllClasses,
-  // promotions
   promoteSingleStudent, promoteEntireClass
 });
 
 /* =========================
    🚀 Boot
 ========================= */
-document.addEventListener('DOMContentLoaded', ()=>{
-  populateClassSelects();
+document.addEventListener('DOMContentLoaded', ()=>{ populateClassSelects(); });
+// When dashboard opens, also render counters (and set default year)
+
+
+// Hook up the buttons once
+document.addEventListener('DOMContentLoaded', () => {
+  const y = document.getElementById('counters-year');
+  const syncBtn  = document.getElementById('sync-counters-btn');
+  const resetBtn = document.getElementById('reset-empty-btn');
+  y?.addEventListener('change', renderCountersTable);
+  syncBtn?.addEventListener('click', syncAllCountersWithStudents);
+  resetBtn?.addEventListener('click', resetEmptyClassYearsTo001);
 });
+
 
 /* =========================
    🧪 Console error surfacing
 ========================= */
-window.addEventListener('error', (e) => {
-  console.group('%cGlobal Error', 'color:#f33');
-  console.error(e.error || e.message);
-  console.log('at', e.filename, 'line:', e.lineno, 'col:', e.colno);
-  console.groupEnd();
-});
-window.addEventListener('unhandledrejection', (e) => {
-  console.group('%cUnhandled Promise Rejection', 'color:#f33');
-  console.error(e.reason);
-  console.groupEnd();
-});
+window.addEventListener('error', (e) => { console.group('%cGlobal Error','color:#f33'); console.error(e.error||e.message); console.log('at',e.filename,'line:',e.lineno,'col:',e.colno); console.groupEnd(); });
+window.addEventListener('unhandledrejection', (e) => { console.group('%cUnhandled Promise Rejection','color:#f33'); console.error(e.reason); console.groupEnd(); });
+ 
+
+/* =========================
+   🧮 Counter utilities
+========================= */
+function counterDocId(year, clsValue) {
+  const code = getClassCode(clsValue);
+  return `${year}-${code}`; // e.g. "2025-IBT"
+}
+
+async function readCounterNext(year, clsValue) {
+  const id = counterDocId(year, clsValue);
+  const snap = await getDoc(doc(db, "counters", id));
+  return snap.exists() ? (snap.data().next ?? 1) : null;
+}
+
+async function writeCounterNext(year, clsValue, nextVal) {
+  const id = counterDocId(year, clsValue);
+  await setDoc(
+    doc(db, "counters", id),
+    { next: Number(nextVal), updatedAt: serverTimestamp(), createdAt: serverTimestamp() },
+    { merge: true }
+  );
+}
+
+/* =========================
+   📋 Counters table render
+========================= */
+async function renderCountersTable() {
+  const yearInput = document.getElementById('counters-year');
+  const tbody = document.getElementById('counters-tbody');
+  if (!yearInput || !tbody) return;
+
+  const year = Number(yearInput.value) || new Date().getFullYear();
+  const rows = [];
+
+  for (const c of CLASS_OPTIONS) {
+    const maxSerial = await findMaxSerialForClassYear(c.value, year); // highest existing for this class+year
+    const desiredNext = Math.max(1, maxSerial + 1);
+
+    const currentNext = await readCounterNext(year, c.value); // may be null if not created
+    const showNext = currentNext ?? '—';
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${c.label}</td>
+      <td><code>${showNext}</code> <span class="muted" style="margin-left:.5rem">desired: ${String(desiredNext).padStart(3,'0')}</span></td>
+      <td>
+        <button class="btn btn-outline btn-sm fix-btn">Fix</button>
+      </td>
+    `;
+
+    tr.querySelector('.fix-btn').addEventListener('click', async () => {
+      await writeCounterNext(year, c.value, desiredNext + 1); // counter stores "next", so +1
+      toast(`${c.label}: counter set to ${String(desiredNext+1).padStart(3, '0')}`, "ok");
+      await renderCountersTable();
+    });
+
+    rows.push(tr);
+  }
+  tbody.replaceChildren(...rows);
+}
+
+/* =========================
+   🔄 Bulk actions
+========================= */
+async function syncAllCountersWithStudents() {
+  const year = Number(document.getElementById('counters-year').value) || new Date().getFullYear();
+
+  for (const c of CLASS_OPTIONS) {
+    const maxSerial = await findMaxSerialForClassYear(c.value, year);
+    const desiredNext = Math.max(1, maxSerial + 1);
+    await writeCounterNext(year, c.value, desiredNext + 1);
+  }
+  toast("All counters synced with students ✅", "ok");
+  await renderCountersTable();
+}
+
+async function resetEmptyClassYearsTo001() {
+  const year = Number(document.getElementById('counters-year').value) || new Date().getFullYear();
+
+  for (const c of CLASS_OPTIONS) {
+    const maxSerial = await findMaxSerialForClassYear(c.value, year);
+    if (maxSerial === 0) {
+      // no students for this class+year → reset counter to 001 (next should be 002)
+      await writeCounterNext(year, c.value, 2);
+    }
+  }
+  toast("Empty class-years reset to 001 ✅", "ok");
+  await renderCountersTable();
+}

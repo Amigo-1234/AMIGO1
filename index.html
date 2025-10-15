@@ -147,6 +147,33 @@
               Generate Positions for All Classes
             </button>
           </div>
+<!-- Counters (sync / reset) -->
+<div class="card">
+  <h3>Counters (sync / reset) <span class="arabic-label">إدارة الترقيم</span></h3>
+
+  <label style="display:flex;align-items:center;gap:.5rem;margin-bottom:.6rem;">
+    <span>Year:</span>
+    <input id="counters-year" type="number" style="width:110px" />
+  </label>
+
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Class</th>
+          <th>Next</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="counters-tbody"></tbody>
+    </table>
+  </div>
+
+  <div style="display:flex;gap:.6rem;margin-top:.8rem;flex-wrap:wrap">
+    <button id="sync-counters-btn"   class="btn btn-primary">SYNC ALL COUNTERS WITH STUDENTS</button>
+    <button id="reset-empty-btn"     class="btn btn-outline">RESET EMPTY CLASS-YEARS TO 001</button>
+  </div>
+</div>
 
           <!-- Per-class Results Toggle -->
           <div class="card">
