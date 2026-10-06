@@ -26,13 +26,19 @@ from the app itself, so builds need network access to `fonts.googleapis.com` /
 `.env.example` lists every variable by name. Copy it to `.env.local` (Git-ignored) and
 fill in values. Never commit real values.
 
-| Variable                 | Needed from | Purpose                                                  |
-| ------------------------ | ----------- | -------------------------------------------------------- |
-| `NEXT_PUBLIC_APP_URL`    | optional    | Public base URL for absolute links in printed documents  |
-| `DATABASE_URL`           | Phase 2     | Neon pooled connection string (application runtime)      |
-| `DATABASE_URL_UNPOOLED`  | Phase 2     | Neon direct connection string (Drizzle migrations)       |
-| `STUDENT_SESSION_SECRET` | Phase 3     | ≥32-character secret for signing student/parent sessions |
-| Neon Auth variables      | Phase 3     | Names confirmed when Neon Auth is provisioned            |
+| Variable                  | Needed from | Purpose                                                      |
+| ------------------------- | ----------- | ------------------------------------------------------------ |
+| `NEXT_PUBLIC_APP_URL`     | optional    | Public base URL for absolute links in printed documents      |
+| `DATABASE_URL`            | Phase 2     | Neon pooled connection string (application runtime)          |
+| `DATABASE_URL_UNPOOLED`   | Phase 2     | Neon direct connection string (Drizzle migrations)           |
+| `NEON_AUTH_BASE_URL`      | Phase 3     | Neon Auth URL for staff sign-in                              |
+| `NEON_AUTH_COOKIE_SECRET` | Phase 3     | ≥32 random characters; signs Neon Auth's session-data cookie |
+| `STUDENT_AUTH_SECRET`     | Phase 3     | ≥32 random characters; PIN pepper and throttle-key secret    |
+| `STAFF_BOOTSTRAP_TOKEN`   | temporary   | ≥32 random characters; unlocks first Super Admin setup once  |
+| `DATABASE_PROXY_TUNNEL`   | optional    | `1` only where database scripts must use an HTTP proxy       |
+
+Generate secrets with `openssl rand -base64 48`. Which variables each Vercel environment
+needs, and the Neon Auth console steps, are in [`authentication.md`](authentication.md#configuration).
 
 Server code reads configuration through `src/lib/env.ts`, which validates values and
 reports exactly which variable is missing when a feature needs it.
@@ -77,6 +83,16 @@ suite does not need a database at all: it uses PGlite (in-memory PostgreSQL).
 npm run check   # lint, typecheck, tests, format check
 npm run build   # production build
 ```
+
+## Authentication
+
+Staff sign in through Neon Auth; students and parents with their ID and a 6-digit PIN.
+Setup (Neon Auth console, trusted domains, first Super Admin) is described in
+[`authentication.md`](authentication.md).
+
+`.npmrc` sets `legacy-peer-deps=true`: Neon Auth's bundled UI package declares many
+optional peer dependencies this app does not use. Keep it so `npm ci` behaves the same
+locally, in CI and on Vercel.
 
 ## Deployment (Vercel)
 

@@ -10,10 +10,13 @@ import { BrandMark } from "./brand-mark";
 export function BrandLockup({
   locale,
   tone = "brand",
+  compact = false,
   className,
 }: {
   locale: Locale;
   tone?: "brand" | "light";
+  /** Show only the mark on narrow screens (when the header also carries actions). */
+  compact?: boolean;
   className?: string;
 }) {
   const names = [
@@ -26,7 +29,12 @@ export function BrandLockup({
   return (
     <span className={cn("inline-flex items-center gap-3", className)}>
       <BrandMark tone={tone} className="size-9" />
-      <span className="flex flex-col leading-tight">
+      <span
+        className={cn(
+          "flex-col leading-tight whitespace-nowrap",
+          compact ? "hidden sm:flex" : "flex",
+        )}
+      >
         <span
           lang={primary.lang}
           className={cn(

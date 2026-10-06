@@ -12,7 +12,7 @@ is preserved in Git history under the tag `v1-first-edition`; see
 
 - [Next.js 16](https://nextjs.org) (App Router) · React 19 · TypeScript (strict)
 - Tailwind CSS 4 with a custom token set · Manrope + Noto Kufi Arabic via `next/font`
-- Neon PostgreSQL + Drizzle ORM · Neon Auth for staff (Phase 3)
+- Neon PostgreSQL + Drizzle ORM · Neon Auth for staff · argon2id PINs for families
 - Vitest · ESLint · Prettier · deployed on Vercel
 
 ## Getting started
@@ -48,6 +48,7 @@ Run `npm run check && npm run build` before merging any branch.
 
 - [Setup](docs/setup.md): local development, environment variables, deployment
 - [Architecture](docs/architecture.md): structure, i18n, design system, security, decisions
+- [Authentication](docs/authentication.md): staff (Neon Auth), students (ID + PIN), permissions, setup
 - [Database](docs/database.md): schema, integrity rules, migrations, seed
 - [Database migration](docs/database-migration.md): moving V1 Firestore data into PostgreSQL
 - [Legacy V1](docs/legacy-v1.md): business rules carried over from the First Edition

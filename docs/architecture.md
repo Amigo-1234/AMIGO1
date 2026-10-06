@@ -49,14 +49,19 @@ src/
     seed/                 Idempotent structural seed
     scripts/              db:migrate / db:seed entry points
     testing/              PGlite test database and fixtures
+  server/                 Server-only application logic
+    auth/                 Credential hashing, keyed hashes, sign-in throttling
+    staff-auth/           Neon Auth integration, staff access, permissions, bootstrap
+    student-auth/         Student ID + PIN sign-in, sessions, legacy PIN migration
+    audit.ts              Audit log writer
   lib/                    Framework-free helpers (env, geometry, brand constants)
-  proxy.ts                Locale redirect + remembered language (Next 16 "proxy")
+  proxy.ts                Locale redirect, Neon Auth session refresh, portal guard
 drizzle/                  SQL migrations (generated + hand-written safeguards)
 docs/                     Project documentation
 ```
 
-Planned additions (later phases): `src/server/` (authentication, authorisation, actions,
-audit logging) and route groups for the portal and admin areas.
+Authenticated areas: `/<locale>/portal/...` (students and parents) and
+`/<locale>/admin/...` (staff). See [`authentication.md`](authentication.md).
 
 ## Internationalisation
 
@@ -116,11 +121,13 @@ Present now: security headers on every response (`next.config.ts`), no
 `X-Powered-By`, server-only environment access (`src/lib/env.ts` imports
 `server-only`), React's escaping for all rendered text (no raw HTML insertion).
 
-Planned (Phases 3 and 10): staff sign-in via Neon Auth; student/parent sign-in with
-hashed PINs verified on the server, rate limiting and lockout, generic error messages
-that do not reveal whether an ID exists, HTTP-only signed session cookies;
-permission-based authorisation on every server action; audit logging;
-nonce-based Content-Security-Policy.
+Since Phase 3 ([`authentication.md`](authentication.md)): staff sign-in via Neon Auth with
+explicit staff-record mapping; student/parent sign-in with argon2id-hashed, peppered PINs
+verified on the server; server-side sessions in HttpOnly SameSite cookies; temporary,
+escalating throttling; generic errors that do not reveal whether an ID exists;
+permission-based authorisation on every server action; audit logging of security events.
+
+Planned (Phase 10): nonce-based Content-Security-Policy and further hardening.
 
 ## Engineering decisions
 
@@ -135,6 +142,9 @@ nonce-based Content-Security-Policy.
 | node-postgres (`pg`) driver for Neon                 | Full interactive transactions (needed for promotion, payments, PIN changes) over Neon's pooled endpoint; the same driver runs migrations. Pool cached across warm serverless invocations. |
 | Money as integer kobo (`bigint`)                     | Exact arithmetic with no floating point or decimal library; ₦ formatting happens at display time.                                                                                         |
 | Rules in the database as well as in code             | Triggers and constraints keep history append-only and IDs unique even if application code has a bug or someone uses SQL directly.                                                         |
+| Neon Auth via server-side Server Actions only        | Credentials never touch client-side code, no client auth SDK is shipped, and no public `/api/auth` proxy (with sign-up) is exposed on our domain.                                         |
+| Our own student sessions (not Neon Auth)             | Families sign in with a Student ID and PIN, not email accounts; opaque database-backed tokens allow instant revocation and forced PIN migration.                                          |
+| argon2id + pepper for PINs                           | Memory-hard hashing plus a server secret, because the 6-digit PIN space is small.                                                                                                         |
 | PGlite for database tests                            | Real PostgreSQL semantics (triggers, constraints) in-process: no server, Docker or credentials needed to run `npm test`.                                                                  |
 
 ## Delivery phases

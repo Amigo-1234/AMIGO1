@@ -4,19 +4,26 @@ import { z } from "zod";
 /**
  * Server-side environment configuration.
  *
- * Every variable is optional during Phase 1 so the app builds and runs without
- * credentials. Features that need a value call `requireEnv()`, which fails with a
- * clear message naming the missing variable instead of failing deep in a driver.
+ * Every variable is optional so the app builds without credentials. Features that need a
+ * value call `requireEnv()`, which fails with a clear message naming the missing variable
+ * instead of failing deep in a driver. Values are never logged.
  */
+const secret = (name: string) =>
+  z.string().min(32, `${name} must be at least 32 characters`).optional();
+
 const serverEnvSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   NEXT_PUBLIC_APP_URL: z.url().optional(),
   DATABASE_URL: z.url().optional(),
   DATABASE_URL_UNPOOLED: z.url().optional(),
-  STUDENT_SESSION_SECRET: z
-    .string()
-    .min(32, "STUDENT_SESSION_SECRET must be at least 32 characters")
-    .optional(),
+  /** Neon Auth URL for staff sign-in (Neon console → Auth → Configuration). */
+  NEON_AUTH_BASE_URL: z.url().optional(),
+  /** Signs Neon Auth's cached session-data cookie. */
+  NEON_AUTH_COOKIE_SECRET: secret("NEON_AUTH_COOKIE_SECRET"),
+  /** Server-side pepper for student PIN hashes and the key for hashing throttle identifiers. */
+  STUDENT_AUTH_SECRET: secret("STUDENT_AUTH_SECRET"),
+  /** One-time code that unlocks first Super Admin setup. Remove once setup is complete. */
+  STAFF_BOOTSTRAP_TOKEN: secret("STAFF_BOOTSTRAP_TOKEN"),
 });
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;
