@@ -11,6 +11,33 @@ export function isValidPin(value: string): boolean {
 }
 
 /**
+ * Weak-PIN rule for **new** PINs (existing PINs keep working at sign-in). Deliberately small
+ * and explainable rather than a long blocklist. A PIN is too predictable when it:
+ *
+ * 1. repeats one digit: 000000, 777777
+ * 2. steps steadily up or down (wrapping 9↔0): 123456, 654321, 890123, 098765
+ * 3. repeats a short block: 121212, 909090, 123123, 456456
+ * 4. reads the same backwards: 123321, 145541, 900009
+ * 5. doubles each digit of a steady run: 112233, 998877, 001122
+ */
+export function isWeakPin(pin: string): boolean {
+  if (!isValidPin(pin)) return false;
+  const d = [...pin].map(Number);
+  const steps = d.slice(1).map((digit, i) => (digit - d[i] + 10) % 10);
+  const repeatsBlock = (size: number) => d.every((digit, i) => digit === d[i % size]);
+
+  if (repeatsBlock(1)) return true; // 1
+  if (steps.every((s) => s === 1) || steps.every((s) => s === 9)) return true; // 2
+  if (repeatsBlock(2) || repeatsBlock(3)) return true; // 3
+  if (pin === [...pin].reverse().join("")) return true; // 4
+  const pairs = d[0] === d[1] && d[2] === d[3] && d[4] === d[5];
+  const pairStep1 = (d[2] - d[0] + 10) % 10;
+  const pairStep2 = (d[4] - d[2] + 10) % 10;
+  if (pairs && pairStep1 === pairStep2 && (pairStep1 === 1 || pairStep1 === 9)) return true; // 5
+  return false;
+}
+
+/**
  * V1 passwords were up to three characters (usually three letters) and compared
  * case-insensitively, so they are normalised to lowercase before hashing and checking.
  */

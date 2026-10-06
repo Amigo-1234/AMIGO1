@@ -5,7 +5,7 @@ import { Notice } from "@/components/ui/notice";
 import { TextField } from "@/components/ui/field";
 import type { Locale } from "@/i18n/config";
 import { type SetPinState, setNewPinAction } from "@/server/student-auth/actions";
-import { isValidPin } from "@/server/student-auth/rules";
+import { isValidPin, isWeakPin } from "@/server/student-auth/rules";
 import { SubmitButton } from "./submit-button";
 
 export type SetPinMessages = {
@@ -40,7 +40,13 @@ export function SetPinForm({ locale, messages }: { locale: Locale; messages: Set
         const data = new FormData(event.currentTarget);
         const pin = String(data.get("newPin") ?? "");
         const confirm = String(data.get("confirmPin") ?? "");
-        const problem = !isValidPin(pin) ? "invalid_pin" : pin !== confirm ? "mismatch" : null;
+        const problem = !isValidPin(pin)
+          ? "invalid_pin"
+          : isWeakPin(pin)
+            ? "weak_pin"
+            : pin !== confirm
+              ? "mismatch"
+              : null;
         if (problem) {
           event.preventDefault();
           setClientError(messages.errors[problem]);

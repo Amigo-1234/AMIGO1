@@ -28,11 +28,12 @@ export default async function SetPinPage() {
         messages={{
           newPin: s.newPin,
           confirmPin: s.confirmPin,
-          hint: t.auth.student.pinHint,
+          hint: s.hint,
           submit: s.submit,
           submitting: s.submitting,
           errors: {
             invalid_pin: s.invalidPin,
+            weak_pin: s.weakPin,
             mismatch: s.mismatch,
             session_invalid: s.sessionInvalid,
             not_configured: t.auth.notConfigured,

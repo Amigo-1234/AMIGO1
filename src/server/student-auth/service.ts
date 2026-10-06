@@ -17,6 +17,7 @@ import {
   canSignIn,
   classifySecret,
   isValidPin,
+  isWeakPin,
   normalizeLegacyPassword,
 } from "./rules";
 import { createStudentSession, findStudentSession, revokeAllStudentSessions } from "./sessions";
@@ -138,6 +139,8 @@ export type PinChangeResult =
   | { status: "ok"; token: string; expiresAt: Date }
   | { status: "session_invalid" }
   | { status: "invalid_pin" }
+  /** Six digits, but too predictable (see isWeakPin). */
+  | { status: "weak_pin" }
   | { status: "mismatch" };
 
 /**
@@ -159,6 +162,7 @@ export async function completeLegacyPinMigration(
   const session = await findStudentSession(db, input.token, input.now);
   if (!session || !session.mustSetPin) return { status: "session_invalid" };
   if (!isValidPin(input.newPin)) return { status: "invalid_pin" };
+  if (isWeakPin(input.newPin)) return { status: "weak_pin" };
   if (input.newPin !== input.confirmPin) return { status: "mismatch" };
 
   const secretHash = await hashCredential(input.newPin, input.authSecret);
@@ -217,6 +221,8 @@ export async function setStudentCredential(
     createdById?: string | null;
   },
 ): Promise<void> {
+  if (input.kind === "pin" && isWeakPin(input.plain))
+    throw new Error("This PIN is too easy to guess");
   if (input.kind === "pin" && !isValidPin(input.plain))
     throw new Error("A PIN must be exactly 6 digits");
   const plain = input.kind === "pin" ? input.plain : normalizeLegacyPassword(input.plain);

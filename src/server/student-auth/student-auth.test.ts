@@ -13,7 +13,7 @@ import { createStudent } from "@/db/testing/fixtures";
 import { createTestDatabase } from "@/db/testing/test-db";
 import type { DbExecutor } from "@/db/types";
 import { sha256Hex } from "../auth/crypto";
-import { classifySecret, isValidPin } from "./rules";
+import { classifySecret, isValidPin, isWeakPin } from "./rules";
 import {
   LEGACY_LOGIN_SETTING,
   completeLegacyPinMigration,
@@ -82,6 +82,44 @@ describe("PIN rules", () => {
     }
   });
 
+  it("rejects predictable new PINs", () => {
+    const weak = [
+      // one digit repeated
+      "000000",
+      "111111",
+      "777777",
+      // steady runs up or down, including wrap-around
+      "012345",
+      "123456",
+      "456789",
+      "890123",
+      "987654",
+      "654321",
+      "098765",
+      // short repeated blocks
+      "121212",
+      "909090",
+      "123123",
+      "456456",
+      // reads the same backwards
+      "123321",
+      "145541",
+      "900009",
+      // doubled steady runs
+      "112233",
+      "998877",
+      "001122",
+    ];
+    for (const pin of weak) expect(isWeakPin(pin), pin).toBe(true);
+  });
+
+  it("accepts ordinary PINs", () => {
+    for (const pin of ["482913", "583920", "102938", "750314", "111222", "135790", "246810"]) {
+      expect(isWeakPin(pin), pin).toBe(false);
+    }
+    expect(isWeakPin("12345")).toBe(false); // not a PIN at all: reported as invalid, not weak
+  });
+
   it("treats short secrets as V1 passwords only while legacy sign-in is enabled", () => {
     expect(classifySecret("abc", true)).toBe("legacy_v1_password");
     expect(classifySecret("abc", false)).toBeNull();
@@ -109,9 +147,9 @@ describe("student sign-in", () => {
   });
 
   it("accepts the ID in any case and with spaces", async () => {
-    const s = await studentWithPin("554433");
+    const s = await studentWithPin("558143");
     const typed = ` ${s.publicId.toLowerCase().replaceAll("-", " ")} `;
-    expect((await signIn(typed, "554433")).status).toBe("ok");
+    expect((await signIn(typed, "558143")).status).toBe("ok");
   });
 
   it("rejects a wrong PIN and an unknown ID with the same result", async () => {
@@ -158,8 +196,8 @@ describe("student sign-in", () => {
   });
 
   it("ends existing sessions of a student who is disabled later", async () => {
-    const s = await studentWithPin("112233");
-    const result = await signIn(s.publicId, "112233");
+    const s = await studentWithPin("118273");
+    const result = await signIn(s.publicId, "118273");
     if (result.status !== "ok") throw new Error("sign-in failed");
     await db.update(students).set({ status: "archived" }).where(eq(students.id, s.id));
     expect(await findStudentSession(db, result.token, minutes(1))).toBeNull();
@@ -196,20 +234,20 @@ describe("throttling", () => {
   });
 
   it("resets the ID's failure count after a successful sign-in", async () => {
-    const s = await studentWithPin("303030");
+    const s = await studentWithPin("305172");
     for (let i = 0; i < 4; i++) await signIn(s.publicId, "000000");
-    expect((await signIn(s.publicId, "303030")).status).toBe("ok");
+    expect((await signIn(s.publicId, "305172")).status).toBe("ok");
     for (let i = 0; i < 4; i++) await signIn(s.publicId, "000000");
-    expect((await signIn(s.publicId, "303030")).status).toBe("ok"); // would be throttled without the reset
+    expect((await signIn(s.publicId, "305172")).status).toBe("ok"); // would be throttled without the reset
   });
 
   it("throttles one network address guessing across many IDs", async () => {
     const ip = "198.51.100.7";
     for (let i = 0; i < 50; i++)
       await signIn(`MGIBT-2097-${String(i + 1).padStart(3, "0")}`, "000000", T0, ip);
-    const s = await studentWithPin("515151");
-    expect((await signIn(s.publicId, "515151", T0, ip)).status).toBe("throttled");
-    expect((await signIn(s.publicId, "515151", T0, "203.0.113.9")).status).toBe("ok");
+    const s = await studentWithPin("516283");
+    expect((await signIn(s.publicId, "516283", T0, ip)).status).toBe("throttled");
+    expect((await signIn(s.publicId, "516283", T0, "203.0.113.9")).status).toBe("ok");
   });
 
   it("stores only keyed hashes, never the raw ID or address", async () => {
@@ -225,25 +263,25 @@ describe("throttling", () => {
 
 describe("sessions", () => {
   it("expire after their lifetime", async () => {
-    const s = await studentWithPin("424242");
-    const r = await signIn(s.publicId, "424242");
+    const s = await studentWithPin("427193");
+    const r = await signIn(s.publicId, "427193");
     if (r.status !== "ok") throw new Error("sign-in failed");
     expect(await findStudentSession(db, r.token, minutes(60))).not.toBeNull();
     expect(await findStudentSession(db, r.token, new Date(r.expiresAt.getTime() + 1))).toBeNull();
   });
 
   it("are invalidated by sign-out and cannot be replayed", async () => {
-    const s = await studentWithPin("616161");
-    const r = await signIn(s.publicId, "616161");
+    const s = await studentWithPin("619284");
+    const r = await signIn(s.publicId, "619284");
     if (r.status !== "ok") throw new Error("sign-in failed");
     await revokeStudentSession(db, r.token, minutes(1));
     expect(await findStudentSession(db, r.token, minutes(1))).toBeNull();
   });
 
   it("issue a fresh token on every sign-in (no fixation)", async () => {
-    const s = await studentWithPin("717171");
-    const a = await signIn(s.publicId, "717171");
-    const b = await signIn(s.publicId, "717171");
+    const s = await studentWithPin("712946");
+    const a = await signIn(s.publicId, "712946");
+    const b = await signIn(s.publicId, "712946");
     if (a.status !== "ok" || b.status !== "ok") throw new Error("sign-in failed");
     expect(a.token).not.toBe(b.token);
   });
@@ -295,7 +333,16 @@ describe("legacy V1 credentials", () => {
       await completeLegacyPinMigration(db, {
         token: legacy.token,
         newPin: "123456",
-        confirmPin: "123457",
+        confirmPin: "123456",
+        authSecret: AUTH_SECRET,
+        now: T0,
+      }),
+    ).toEqual({ status: "weak_pin" });
+    expect(
+      await completeLegacyPinMigration(db, {
+        token: legacy.token,
+        newPin: "583920",
+        confirmPin: "583921",
         authSecret: AUTH_SECRET,
         now: T0,
       }),
@@ -336,8 +383,8 @@ describe("legacy V1 credentials", () => {
   });
 
   it("refuse PIN migration from a normal session or without a session", async () => {
-    const s = await studentWithPin("654321");
-    const r = await signIn(s.publicId, "654321");
+    const s = await studentWithPin("653914");
+    const r = await signIn(s.publicId, "653914");
     if (r.status !== "ok") throw new Error("sign-in failed");
     const input = { newPin: "111222", confirmPin: "111222", authSecret: AUTH_SECRET, now: T0 };
     expect(await completeLegacyPinMigration(db, { ...input, token: r.token })).toEqual({
@@ -346,6 +393,22 @@ describe("legacy V1 credentials", () => {
     expect(await completeLegacyPinMigration(db, { ...input, token: null })).toEqual({
       status: "session_invalid",
     });
+  });
+});
+
+describe("weak PINs", () => {
+  it("cannot be issued, but an existing PIN still signs in", async () => {
+    const s = await studentWithPin("482913");
+    await expect(
+      setStudentCredential(db, {
+        studentId: s.id,
+        kind: "pin",
+        plain: "111111",
+        authSecret: AUTH_SECRET,
+        now: T0,
+      }),
+    ).rejects.toThrow("too easy to guess");
+    expect((await signIn(s.publicId, "482913")).status).toBe("ok");
   });
 });
 
