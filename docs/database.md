@@ -142,6 +142,11 @@ never in these tables.
 - `student_sessions` stores only a SHA-256 hash of the session token. `auth_throttles`
   tracks failures by hashed keys (student ID, IP) for rate limiting and lockout.
 
+### First Super Admin marker
+
+`system_settings['auth.staff_bootstrap']` is written by the one-time Super Admin setup and
+permanently disables it (see [`authentication.md`](authentication.md#first-super-admin-one-time-bootstrap)).
+
 ### Audit log
 
 `audit_logs` is append-only (no update, delete or truncate). Each entry records the actor
