@@ -30,12 +30,13 @@ export type StaffAuthState =
   | { status: "ok"; access: StaffAccess };
 
 export async function evaluateStaffSession(
-  db: DbExecutor,
+  db: DbExecutor | (() => DbExecutor),
   snapshot: NeonSessionSnapshot,
 ): Promise<StaffAuthState> {
   if (!snapshot.configured) return { status: "not_configured" };
   if (!snapshot.identity) return { status: "signed_out", expired: snapshot.hadSessionCookie };
-  const result = await resolveStaffAccess(db, snapshot.identity);
+  // The database is only touched when there is an identity to check.
+  const result = await resolveStaffAccess(typeof db === "function" ? db() : db, snapshot.identity);
   if (result.kind === "ok") return { status: "ok", access: result.access };
   return { status: result.kind };
 }
