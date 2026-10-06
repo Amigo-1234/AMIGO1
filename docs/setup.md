@@ -40,6 +40,25 @@ reports exactly which variable is missing when a feature needs it.
 On Vercel, the Neon integration can inject `DATABASE_URL` and `DATABASE_URL_UNPOOLED`
 automatically; other values are set under Project → Settings → Environment Variables.
 
+## Database (Neon)
+
+1. Create a Neon project (PostgreSQL 16 or newer) and copy both connection strings:
+   the **pooled** one into `DATABASE_URL` and the **direct** one into
+   `DATABASE_URL_UNPOOLED`.
+2. Apply migrations and seed structural defaults:
+
+   ```bash
+   npm run db:migrate
+   npm run db:seed
+   ```
+
+Both commands are safe to re-run. See [`database.md`](database.md) for the schema and the
+migration workflow.
+
+For local development without Neon, any PostgreSQL 16+ works, e.g.
+`DATABASE_URL=postgres://user:password@localhost:5432/mig_dev` in `.env.local`. The test
+suite does not need a database at all: it uses PGlite (in-memory PostgreSQL).
+
 ## Quality checks
 
 ```bash
