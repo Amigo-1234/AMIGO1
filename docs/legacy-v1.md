@@ -21,11 +21,11 @@ behaviours V2 deliberately does **not** carry over.
 
 ### Levels (classes)
 
-| Value (V1 key) | Label         | Meaning  | ID code |
-| -------------- | ------------- | -------- | ------- |
-| `Ibtidaiyah`   | Ibtidā'iyah   | Beginner | `IBT`   |
-| `Idadiyah`     | Idādiyah      | Middle   | `IDA`   |
-| `Thanawiyah`   | Thanāwiyah    | Senior   | `THA`   |
+| Value (V1 key) | Label       | Meaning  | ID code |
+| -------------- | ----------- | -------- | ------- |
+| `Ibtidaiyah`   | Ibtidā'iyah | Beginner | `IBT`   |
+| `Idadiyah`     | Idādiyah    | Middle   | `IDA`   |
+| `Thanawiyah`   | Thanāwiyah  | Senior   | `THA`   |
 
 Progression: Ibtidā'iyah → Idādiyah → Thanāwiyah → (V2 adds) Graduated.
 
@@ -35,7 +35,7 @@ Format `MG{CLASS_CODE}-{YEAR}-{SERIAL}`, serial zero-padded to 3 digits.
 Examples: `MGIBT-2025-001`, `MGIDA-2025-014`, `MGTHA-2025-007`.
 
 Existing IDs must be preserved exactly. V1 could **recycle** IDs (it derived the
-next serial from the highest *existing* student document, so deleting or promoting
+next serial from the highest _existing_ student document, so deleting or promoting
 a student freed their serial). V2 must never recycle an ID.
 
 V1 also issued a **new** ID when a student was promoted. V2 keeps one permanent
