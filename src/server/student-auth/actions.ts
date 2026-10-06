@@ -98,8 +98,9 @@ export async function studentSignOutAction(formData: FormData): Promise<void> {
   const locale = formLocale(formData);
   try {
     await revokeStudentSession(getDb(), await readStudentToken(), new Date());
-  } finally {
-    await clearStudentCookie();
+  } catch {
+    // Signing out must always succeed for the visitor; the session still expires on its own.
   }
+  await clearStudentCookie();
   redirect(localizedPath(locale, "/portal/login?reason=signed_out"));
 }
