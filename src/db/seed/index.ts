@@ -55,7 +55,16 @@ export async function seedDatabase(db: DbExecutor): Promise<SeedSummary> {
 
     const insertedLevels = await tx
       .insert(levels)
-      .values(DEFAULT_LEVELS.map(({ nextLevelCode: _next, ...level }) => level))
+      .values(
+        DEFAULT_LEVELS.map((l) => ({
+          code: l.code,
+          nameEn: l.nameEn,
+          nameAr: l.nameAr,
+          stageEn: l.stageEn,
+          stageAr: l.stageAr,
+          sortOrder: l.sortOrder,
+        })),
+      )
       .onConflictDoNothing()
       .returning({ id: levels.id, code: levels.code });
     count("levels", insertedLevels);
@@ -141,7 +150,15 @@ export async function seedDatabase(db: DbExecutor): Promise<SeedSummary> {
 
     const insertedRoles = await tx
       .insert(roles)
-      .values(DEFAULT_ROLES.map(({ permissions: _p, ...role }) => ({ ...role, isSystem: true })))
+      .values(
+        DEFAULT_ROLES.map((r) => ({
+          key: r.key,
+          nameEn: r.nameEn,
+          nameAr: r.nameAr,
+          description: r.description,
+          isSystem: true,
+        })),
+      )
       .onConflictDoNothing()
       .returning({ id: roles.id, key: roles.key });
     count("roles", insertedRoles);
