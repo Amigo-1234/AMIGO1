@@ -30,7 +30,14 @@ export async function openScriptConnection(): Promise<ScriptConnection> {
     console.error("Missing DATABASE_URL_UNPOOLED (or DATABASE_URL). See .env.example.");
     process.exit(1);
   }
-  const parsed = new URL(url);
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    // Never echo the value: Node's URL error includes the full input string.
+    console.error("The database connection string is not a valid URL.");
+    process.exit(1);
+  }
   console.log(`Database host: ${parsed.hostname}`);
 
   const proxy = process.env.HTTPS_PROXY || process.env.https_proxy;
@@ -65,6 +72,51 @@ export async function openScriptConnection(): Promise<ScriptConnection> {
       await tunnel.close();
     },
   };
+}
+
+/** Every secret-looking value from the database environment variables (URLs and their parts). */
+function secretFragments(): string[] {
+  const fragments = new Set<string>();
+  for (const key of ["DATABASE_URL", "DATABASE_URL_UNPOOLED"]) {
+    const value = process.env[key];
+    if (!value) continue;
+    fragments.add(value);
+    try {
+      const url = new URL(value);
+      for (const part of [url.password, decodeURIComponent(url.password), url.username]) {
+        if (part && part.length >= 4) fragments.add(part);
+      }
+    } catch {
+      // Unparseable values are still redacted as a whole.
+    }
+  }
+  // Longest first so a full URL is replaced before its parts.
+  return [...fragments].sort((a, b) => b.length - a.length);
+}
+
+export function redactSecrets(text: string): string {
+  let result = text;
+  for (const fragment of secretFragments()) result = result.split(fragment).join("***");
+  // Belt and braces: hide credentials in any connection URL that slipped through.
+  return result.replace(/(postgres(?:ql)?:\/\/)[^@\s/]+@/gi, "$1***@");
+}
+
+/**
+ * Report a script failure without risking credential exposure: only error messages and
+ * codes are printed (never whole error objects, which can carry connection details),
+ * after redacting every known secret fragment.
+ */
+export function reportScriptError(label: string, error: unknown): void {
+  const lines: string[] = [];
+  let current: unknown = error;
+  for (let depth = 0; current && depth < 5; depth++) {
+    const e = current as { message?: unknown; code?: unknown; cause?: unknown };
+    const code = typeof e.code === "string" ? ` [${e.code}]` : "";
+    lines.push(`${String(e.message ?? current)}${code}`);
+    current = e.cause;
+  }
+  console.error(redactSecrets(`${label}: ${lines.join("\n  caused by: ")}`));
+  process.exitCode = 1;
 }
 
 /** Local TCP listener that forwards each connection through an HTTP CONNECT proxy. */

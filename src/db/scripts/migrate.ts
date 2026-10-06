@@ -1,6 +1,6 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
-import { openScriptConnection } from "./connection";
+import { openScriptConnection, reportScriptError } from "./connection";
 
 // Applies pending migrations from ./drizzle in order (all-or-nothing per run).
 async function main() {
@@ -13,7 +13,4 @@ async function main() {
   }
 }
 
-main().catch((error) => {
-  console.error("Migration failed:", error);
-  process.exitCode = 1;
-});
+main().catch((error) => reportScriptError("Migration failed", error));

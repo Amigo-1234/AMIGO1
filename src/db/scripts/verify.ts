@@ -4,7 +4,7 @@ import type { PoolClient } from "pg";
 import { DEFAULT_CURRICULUM, DEFAULT_LEVELS, DEFAULT_TERM_TYPES } from "@/domain/curriculum";
 import { DEFAULT_GRADING_POLICY } from "@/domain/grading";
 import { ALL_PERMISSIONS, DEFAULT_ROLES } from "@/domain/permissions";
-import { openScriptConnection } from "./connection";
+import { openScriptConnection, reportScriptError } from "./connection";
 
 /**
  * Read-only verification of a live database against this repository:
@@ -394,7 +394,4 @@ async function main() {
   process.exitCode = failures === 0 ? 0 : 1;
 }
 
-main().catch((error) => {
-  console.error("Verification failed:", error);
-  process.exitCode = 1;
-});
+main().catch((error) => reportScriptError("Verification failed", error));
