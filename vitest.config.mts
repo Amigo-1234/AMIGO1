@@ -12,5 +12,8 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["src/**/*.test.ts"],
+    // Neon Auth imports `next/headers` without an extension, which Node's strict ESM
+    // resolver rejects; letting Vite process the package resolves it like Next.js does.
+    server: { deps: { inline: ["@neondatabase/auth"] } },
   },
 });
