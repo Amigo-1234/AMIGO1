@@ -1,0 +1,131 @@
+# Architecture
+
+## Principles
+
+1. **The server is the only gatekeeper.** The browser never talks to the database.
+   Every read of student data and every write goes through server code (Server
+   Components, Server Actions, Route Handlers) that authenticates the caller, checks a
+   permission and validates input.
+2. **History is append-only.** Results, payments, enrolments and promotions are never
+   silently overwritten or deleted; corrections are new records (void, reverse, archive).
+3. **Families get simplicity, staff get capability.** The student/parent portal is a
+   handful of screens; the admin system carries the complexity.
+4. **Light on the network.** Pages are server-rendered and mostly static HTML; client
+   JavaScript is used only where interaction needs it. No large UI kits.
+5. **Business rules live in plain, tested TypeScript modules**, separate from React and
+   from the database layer, so they can be unit-tested and reused by migrations.
+
+## Project structure
+
+```
+src/
+  app/                    Next.js App Router
+    [locale]/             Every page lives under /en or /ar (root layout sets lang/dir)
+      page.tsx            Public landing page
+      portal/login/       Student / parent sign-in
+      staff/login/        Staff sign-in
+      not-found.tsx       Localized 404 ([...rest] catch-all routes unmatched URLs here)
+    fonts.ts              next/font declarations
+    globals.css           Design tokens (Tailwind @theme) and base styles
+    icon.svg              App icon
+  components/
+    ui/                   Generic primitives: Button, TextField, Card, Badge, Notice
+    brand/                Mark, lockup, geometric pattern, arch, ornament
+    layout/               Site header/footer, auth shell, language switcher, skip link
+    icons/                Inline SVG icons
+  i18n/
+    config.ts             Locales, direction, Intl locale, negotiation
+    dictionaries/         en.ts defines the shape; ar.ts must match it
+    format.ts             interpolate(), Naira/number/date formatting
+    paths.ts              Localized hrefs, language switching
+    server.ts             getLocale()/getDictionary() for Server Components
+  lib/                    Framework-free helpers (env, geometry, brand constants)
+  proxy.ts                Locale redirect + remembered language (Next 16 "proxy")
+docs/                     Project documentation
+```
+
+Planned additions (later phases): `src/db/` (Drizzle schema, client, migrations),
+`src/domain/` (grading, scoring, ranking, fees, IDs, promotion rules), `src/server/`
+(authorisation, actions, audit logging) and route groups for the portal and admin areas.
+
+## Internationalisation
+
+- Locales: `en` (LTR) and `ar` (RTL). URLs are always prefixed: `/en/...`, `/ar/...`.
+- `src/proxy.ts` redirects un-prefixed URLs. Order of preference: the `mig_locale`
+  cookie (last language the visitor used), then the `Accept-Language` header by quality,
+  then English. Visiting a prefixed URL updates the cookie.
+- The root layout lives in `app/[locale]/layout.tsx` and renders
+  `<html lang dir>` from the locale, so the whole document flips direction.
+- Strings live in typed dictionaries. `en.ts` defines the shape; `ar.ts` is typed as
+  `Dictionary`, so a missing or extra key is a compile error. Tests also check that
+  every Arabic string is non-empty, written in Arabic and uses the same `{placeholders}`.
+- Translations are read on the server (`getDictionary()` via `next/root-params`), so
+  dictionaries add nothing to the client bundle. Client components receive only the
+  strings they need as props.
+- Layout uses logical properties (`ms-`, `pe-`, `start-`, `border-s`, `text-start`), so
+  components mirror automatically. Direction-bearing icons use `rtl:-scale-x-100`.
+- Data entry that is inherently Latin (student IDs, PINs, emails) stays `dir="ltr"`
+  inside Arabic pages.
+- Numbers, Naira amounts and dates use `Intl` with `en-NG` and `ar-u-nu-latn` (Arabic
+  text with Western digits, so IDs, scores and money read the same in both languages),
+  in the `Africa/Lagos` time zone.
+- Proper nouns are never translated: the school's name appears in both scripts, each
+  marked with its own `lang` so it gets the correct font and shaping.
+
+## Design system
+
+- **Palette** (`globals.css`): Tailwind's default colours are cleared; only the brand
+  palette exists. Deep emerald (`brand-*`) is primary; ivory is the page; sand and stone
+  are surfaces and neutrals; charcoal is text; gold (`gold-*`) is ornament and accent
+  only, never body text. Text pairs meet WCAG AA.
+- **Type**: Manrope (Latin) and Noto Kufi Arabic (Arabic), both variable fonts
+  self-hosted by `next/font`. Any element with `lang="ar"` uses the Arabic face; Arabic
+  pages get a taller line height.
+- **Shape**: small radii (2–8px), hairline borders, near-flat shadows. No glass,
+  gradients, glows or pill-shaped buttons.
+- **Ornament**: khatam star, star-and-cross lattice, pointed arch and a fine divider,
+  generated from `src/lib/geometry.ts` as inline SVG (no images, no client JS). Used on
+  the landing page, sign-in screens, empty states and print documents only, never
+  across data-heavy admin screens.
+- **Accessibility**: semantic landmarks, a skip link, labelled inputs with
+  `aria-describedby` hints and errors, visible focus outlines, 44px+ touch targets,
+  16px inputs (no iOS zoom), and a reduced-motion override.
+
+## Security baseline
+
+Present now: security headers on every response (`next.config.ts`), no
+`X-Powered-By`, server-only environment access (`src/lib/env.ts` imports
+`server-only`), React's escaping for all rendered text (no raw HTML insertion).
+
+Planned (Phases 3 and 10): staff sign-in via Neon Auth; student/parent sign-in with
+hashed PINs verified on the server, rate limiting and lockout, generic error messages
+that do not reveal whether an ID exists, HTTP-only signed session cookies;
+permission-based authorisation on every server action; audit logging;
+nonce-based Content-Security-Policy.
+
+## Engineering decisions
+
+| Decision                                             | Reason                                                                                                                                                      |
+| ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Custom typed dictionaries instead of an i18n library | Two languages and server-rendered pages; compile-time key parity with no client runtime. Can move to `next-intl` later if plural/ICU needs grow.            |
+| Locale in the URL (`/en`, `/ar`)                     | Shareable, cacheable, static pages per language; correct `lang`/`dir` in the first HTML byte.                                                               |
+| Tailwind CSS 4 with a closed palette                 | Zero runtime CSS, logical-property utilities for RTL, and a palette that cannot drift.                                                                      |
+| Western digits in Arabic                             | Student IDs (`MGIBT-2025-001`), scores and amounts read identically for staff and families. Easy to switch per locale in `src/i18n/config.ts` if preferred. |
+| No component library                                 | Small, purpose-built primitives keep bundles small for low-end phones on mobile networks.                                                                   |
+| npm, Node 22                                         | Matches Vercel defaults; Vitest 5 requires Node ≥ 20.19 / 22.12 types.                                                                                      |
+
+## Delivery phases
+
+1. **Foundation**: Next.js, TypeScript, structure, fonts, bilingual architecture,
+   design system, environment setup, repository cleanup.
+2. **Database**: Neon + Drizzle schema, migrations, seeds, database utilities.
+3. **Authentication and authorisation**: staff auth, roles and permissions, secure
+   student sign-in.
+4. **Academic core**: sessions, terms, levels, subjects, students, enrolments.
+5. **Admin experience**: admin shell, dashboard, registration and student management.
+6. **Results**: score entry, validation, grading, ranking, publication.
+7. **Student portal**: overview, results, fees, history, profile.
+8. **Finance**: fees, payment ledger, receipts and statements.
+9. **Promotion**: individual and bulk promotion, graduation.
+10. **Operations**: audit log, settings, reports, security hardening, migration tooling.
+11. **Polish**: responsive, RTL and accessibility QA, performance, production deployment.
