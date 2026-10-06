@@ -52,7 +52,19 @@ automatically; other values are set under Project → Settings → Environment V
    npm run db:seed
    ```
 
-Both commands are safe to re-run. See [`database.md`](database.md) for the schema and the
+3. Check the live database against the repository:
+
+   ```bash
+   npm run db:verify
+   ```
+
+   It confirms that every migration, table, constraint, index, integrity trigger and seed
+   row is present, and runs a few constraint probes inside a transaction that is always
+   rolled back (it never writes). It prints the database host but never credentials.
+
+The migrate and seed commands are safe to re-run. If outbound connections must go through
+an HTTP proxy (`HTTPS_PROXY`), set `DATABASE_PROXY_TUNNEL=1` and the scripts tunnel the
+database connection through it, still verifying TLS against the real host. See [`database.md`](database.md) for the schema and the
 migration workflow.
 
 For local development without Neon, any PostgreSQL 16+ works, e.g.

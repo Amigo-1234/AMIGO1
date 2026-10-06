@@ -17,7 +17,8 @@
     "db:check": "drizzle-kit check",
     "db:migrate": "tsx src/db/scripts/migrate.ts",
     "db:seed": "tsx src/db/scripts/seed.ts",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "db:verify": "tsx src/db/scripts/verify.ts"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.3",
