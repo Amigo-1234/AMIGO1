@@ -40,6 +40,7 @@ npm run dev                  # http://localhost:3000 → redirects to /en or /ar
 | `npm run db:generate` | Generate a migration from schema changes  |
 | `npm run db:migrate`  | Apply pending migrations                  |
 | `npm run db:seed`     | Insert structural defaults (idempotent)   |
+| `npm run db:verify`   | Read-only check of a live database        |
 
 Run `npm run check && npm run build` before merging any branch.
 
