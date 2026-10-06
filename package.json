@@ -21,6 +21,8 @@
     "db:verify": "tsx src/db/scripts/verify.ts"
   },
   "dependencies": {
+    "@neondatabase/auth": "0.5.0-beta",
+    "@node-rs/argon2": "^2.2.2",
     "drizzle-orm": "^0.45.3",
     "next": "16.3.8",
     "pg": "^8.23.1",
@@ -43,6 +45,7 @@
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
     "typescript": "^5",
+    "vite": "^8.3.3",
     "vitest": "^5.0.3"
   },
   "description": "Markaz il Ginna (مركز الجنة) — school management and student results platform",

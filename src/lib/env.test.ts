@@ -7,16 +7,14 @@ describe("parseServerEnv", () => {
   });
 
   it("treats empty strings as unset", () => {
-    const env = parseServerEnv({ DATABASE_URL: "", STUDENT_SESSION_SECRET: "" });
+    const env = parseServerEnv({ DATABASE_URL: "", STUDENT_AUTH_SECRET: "" });
     expect(env.DATABASE_URL).toBeUndefined();
-    expect(env.STUDENT_SESSION_SECRET).toBeUndefined();
+    expect(env.STUDENT_AUTH_SECRET).toBeUndefined();
   });
 
   it("rejects malformed values with the variable name", () => {
     expect(() => parseServerEnv({ DATABASE_URL: "not a url" })).toThrow(/DATABASE_URL/);
-    expect(() => parseServerEnv({ STUDENT_SESSION_SECRET: "short" })).toThrow(
-      /STUDENT_SESSION_SECRET/,
-    );
+    expect(() => parseServerEnv({ STUDENT_AUTH_SECRET: "short" })).toThrow(/STUDENT_AUTH_SECRET/);
   });
 });
 
