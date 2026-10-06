@@ -1,0 +1,88 @@
+# TEMPORARY: manual verification of the chore/neon-connection branch against the real Neon
+# database. Remove after the Neon setup is verified.
+#
+# Secrets (repository → Settings → Secrets and variables → Actions):
+#   DATABASE_URL           Neon pooled connection string
+#   DATABASE_URL_UNPOOLED  Neon direct connection string
+# They are passed only to the database steps and are never printed: GitHub masks the
+# full values, this job additionally masks the password and user parts, and the scripts
+# print only the database host and redacted error messages.
+name: Temporary Neon verification
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: neon-verification
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out chore/neon-connection
+        uses: actions/checkout@v4
+        with:
+          ref: chore/neon-connection
+          persist-credentials: false
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check secrets are present and mask their parts
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_URL_UNPOOLED: ${{ secrets.DATABASE_URL_UNPOOLED }}
+        run: |
+          node --input-type=module -e '
+            for (const key of ["DATABASE_URL", "DATABASE_URL_UNPOOLED"]) {
+              const value = process.env[key];
+              if (!value) { console.error(`${key} secret is not set.`); process.exit(1); }
+              let url;
+              try { url = new URL(value); } catch { console.error(`${key} is not a valid URL.`); process.exit(1); }
+              for (const part of [url.password, decodeURIComponent(url.password), url.username]) {
+                if (part) console.log(`::add-mask::${part}`);
+              }
+              console.log(`${key}: present`);
+            }
+          '
+
+      - name: Apply migrations (db:migrate)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_URL_UNPOOLED: ${{ secrets.DATABASE_URL_UNPOOLED }}
+        run: npm run db:migrate
+
+      - name: Seed structural defaults (db:seed, first run)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_URL_UNPOOLED: ${{ secrets.DATABASE_URL_UNPOOLED }}
+        run: npm run db:seed
+
+      - name: Seed again to confirm idempotency (db:seed, second run)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_URL_UNPOOLED: ${{ secrets.DATABASE_URL_UNPOOLED }}
+        run: npm run db:seed
+
+      - name: Verify the live database (db:verify)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_URL_UNPOOLED: ${{ secrets.DATABASE_URL_UNPOOLED }}
+        run: npm run db:verify
+
+      - name: Lint, typecheck, tests and format check
+        run: npm run check
+
+      - name: Production build
+        run: npm run build
