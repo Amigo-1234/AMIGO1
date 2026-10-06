@@ -105,6 +105,11 @@ Wrong codes are compared in constant time and throttled per network address.
   (`student_identifiers`), case-insensitive, spaces/underscores tolerated.
 - **PIN**: exactly 6 digits (validated in the browser for convenience and on the server
   as the authority).
+- **New PINs must not be predictable** (`isWeakPin` in `src/server/student-auth/rules.ts`).
+  Rejected: one digit repeated (`000000`), steady runs up or down including wrap-around
+  (`123456`, `654321`, `890123`), short repeated blocks (`121212`, `123123`), PINs that read
+  the same backwards (`123321`), and doubled runs (`112233`). The rule applies when a PIN
+  is created (legacy migration, staff-issued PINs); existing PINs still sign in.
 - Wrong PIN and unknown ID return the same message, and an unknown ID still costs a full
   hash verification (dummy hash) so timing does not reveal which IDs exist.
 - Students with status `active` or `graduated` may sign in. `suspended`, `withdrawn` and

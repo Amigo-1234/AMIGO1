@@ -58,7 +58,10 @@ export const en = {
       confirmPin: "Confirm new PIN",
       submit: "Save PIN",
       submitting: "Saving…",
+      hint: "6 digits. Avoid repeated digits, sequences and simple patterns.",
       invalidPin: "The PIN must be exactly 6 digits.",
+      weakPin:
+        "This PIN is too easy to guess. Avoid repeated digits (111111), sequences (123456 or 654321) and simple patterns (121212, 123321).",
       mismatch: "The two PINs do not match.",
       sessionInvalid: "This page has expired. Please sign in again with your old password.",
       saved: "Your new PIN is saved. Use it from now on.",
