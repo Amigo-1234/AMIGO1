@@ -39,14 +39,24 @@ src/
     format.ts             interpolate(), Naira/number/date formatting
     paths.ts              Localized hrefs, language switching
     server.ts             getLocale()/getDictionary() for Server Components
+  domain/                 Pure business rules (no React, no database): student IDs,
+                          grading policy, curriculum defaults, permissions
+  db/
+    schema/               Drizzle table definitions by area (see docs/database.md)
+    client.ts             Server-only database handle (node-postgres pool, lazy)
+    actor.ts              Transaction-local acting user for audit triggers
+    student-ids.ts        Never-recycled student ID allocation
+    seed/                 Idempotent structural seed
+    scripts/              db:migrate / db:seed entry points
+    testing/              PGlite test database and fixtures
   lib/                    Framework-free helpers (env, geometry, brand constants)
   proxy.ts                Locale redirect + remembered language (Next 16 "proxy")
+drizzle/                  SQL migrations (generated + hand-written safeguards)
 docs/                     Project documentation
 ```
 
-Planned additions (later phases): `src/db/` (Drizzle schema, client, migrations),
-`src/domain/` (grading, scoring, ranking, fees, IDs, promotion rules), `src/server/`
-(authorisation, actions, audit logging) and route groups for the portal and admin areas.
+Planned additions (later phases): `src/server/` (authentication, authorisation, actions,
+audit logging) and route groups for the portal and admin areas.
 
 ## Internationalisation
 
@@ -91,6 +101,15 @@ Planned additions (later phases): `src/db/` (Drizzle schema, client, migrations)
   `aria-describedby` hints and errors, visible focus outlines, 44px+ touch targets,
   16px inputs (no iOS zoom), and a reduced-motion override.
 
+## Data layer
+
+PostgreSQL (Neon) through Drizzle ORM; full design in [`database.md`](database.md). In short:
+UUID keys with separate human-facing codes, money in integer kobo, append-only or void-only
+history for results, payments, identifiers and the audit log, and rules enforced by
+constraints and triggers as well as by server code. The browser never connects to the
+database: all access goes through server code using `getDb()` from `src/db/client.ts`
+(server-only).
+
 ## Security baseline
 
 Present now: security headers on every response (`next.config.ts`), no
@@ -105,14 +124,18 @@ nonce-based Content-Security-Policy.
 
 ## Engineering decisions
 
-| Decision                                             | Reason                                                                                                                                                      |
-| ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Custom typed dictionaries instead of an i18n library | Two languages and server-rendered pages; compile-time key parity with no client runtime. Can move to `next-intl` later if plural/ICU needs grow.            |
-| Locale in the URL (`/en`, `/ar`)                     | Shareable, cacheable, static pages per language; correct `lang`/`dir` in the first HTML byte.                                                               |
-| Tailwind CSS 4 with a closed palette                 | Zero runtime CSS, logical-property utilities for RTL, and a palette that cannot drift.                                                                      |
-| Western digits in Arabic                             | Student IDs (`MGIBT-2025-001`), scores and amounts read identically for staff and families. Easy to switch per locale in `src/i18n/config.ts` if preferred. |
-| No component library                                 | Small, purpose-built primitives keep bundles small for low-end phones on mobile networks.                                                                   |
-| npm, Node 22                                         | Matches Vercel defaults; Vitest 5 requires Node ≥ 20.19 / 22.12 types.                                                                                      |
+| Decision                                             | Reason                                                                                                                                                                                    |
+| ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Custom typed dictionaries instead of an i18n library | Two languages and server-rendered pages; compile-time key parity with no client runtime. Can move to `next-intl` later if plural/ICU needs grow.                                          |
+| Locale in the URL (`/en`, `/ar`)                     | Shareable, cacheable, static pages per language; correct `lang`/`dir` in the first HTML byte.                                                                                             |
+| Tailwind CSS 4 with a closed palette                 | Zero runtime CSS, logical-property utilities for RTL, and a palette that cannot drift.                                                                                                    |
+| Western digits in Arabic                             | Student IDs (`MGIBT-2025-001`), scores and amounts read identically for staff and families. Easy to switch per locale in `src/i18n/config.ts` if preferred.                               |
+| No component library                                 | Small, purpose-built primitives keep bundles small for low-end phones on mobile networks.                                                                                                 |
+| npm, Node 22                                         | Matches Vercel defaults; Vitest 5 requires Node ≥ 20.19 / 22.12 types.                                                                                                                    |
+| node-postgres (`pg`) driver for Neon                 | Full interactive transactions (needed for promotion, payments, PIN changes) over Neon's pooled endpoint; the same driver runs migrations. Pool cached across warm serverless invocations. |
+| Money as integer kobo (`bigint`)                     | Exact arithmetic with no floating point or decimal library; ₦ formatting happens at display time.                                                                                         |
+| Rules in the database as well as in code             | Triggers and constraints keep history append-only and IDs unique even if application code has a bug or someone uses SQL directly.                                                         |
+| PGlite for database tests                            | Real PostgreSQL semantics (triggers, constraints) in-process: no server, Docker or credentials needed to run `npm test`.                                                                  |
 
 ## Delivery phases
 
