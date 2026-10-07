@@ -30,6 +30,10 @@ on:
         description: "Run the live student sign-in test (temporary test student, archived after)"
         type: boolean
         default: false
+      probe_urls:
+        description: "Extra origins to probe (space-separated), e.g. a deployment URL or custom domain"
+        type: string
+        default: ""
 
 permissions:
   contents: read
@@ -43,6 +47,20 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
+      - name: Probe hosts (status, Vercel headers, page title)
+        env:
+          PROBE: ${{ inputs.base_url }} ${{ inputs.probe_urls }}
+        run: |
+          for origin in $PROBE; do
+            for path in / /en /en/staff/login; do
+              echo "== ${origin}${path}"
+              curl -sS -o body.html -D headers.txt --max-time 20 "${origin}${path}" || true
+              grep -iE '^(HTTP/|server:|x-vercel-id|x-vercel-error|x-vercel-cache|x-matched-path|x-powered-by|location:|age:)' headers.txt || true
+              grep -oiE '<title>[^<]*</title>' body.html | head -1 || true
+              rm -f body.html headers.txt
+            done
+          done
+
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
