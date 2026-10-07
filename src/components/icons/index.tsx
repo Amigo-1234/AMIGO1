@@ -73,3 +73,100 @@ export function InfoIcon(props: IconProps) {
     </Icon>
   );
 }
+
+export function DashboardIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <rect x="4" y="4" width="7" height="8" rx="1" />
+      <rect x="13" y="4" width="7" height="5" rx="1" />
+      <rect x="13" y="11" width="7" height="9" rx="1" />
+      <rect x="4" y="14" width="7" height="6" rx="1" />
+    </Icon>
+  );
+}
+
+export function CalendarIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <rect x="4" y="5" width="16" height="15" rx="1.5" />
+      <path d="M4 10h16M8 3v4M16 3v4" />
+    </Icon>
+  );
+}
+
+export function UserIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <circle cx="12" cy="8.5" r="3.5" />
+      <path d="M5 20c.8-3.4 3.6-5.5 7-5.5s6.2 2.1 7 5.5" />
+    </Icon>
+  );
+}
+
+export function ResultsIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M5 20V10M12 20V4M19 20v-7" />
+    </Icon>
+  );
+}
+
+export function WalletIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <rect x="3.5" y="6" width="17" height="13" rx="1.5" />
+      <path d="M16 12.5h4.5M6.5 6l8-3 1.5 3" />
+    </Icon>
+  );
+}
+
+export function ReportIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M7 3.5h7l4 4V20.5H7z" />
+      <path d="M14 3.5v4h4M10 12h5M10 15.5h5" />
+    </Icon>
+  );
+}
+
+export function MenuIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M4 7h16M4 12h16M4 17h16" />
+    </Icon>
+  );
+}
+
+export function CloseIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M6 6l12 12M18 6 6 18" />
+    </Icon>
+  );
+}
+
+export function SearchIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <circle cx="11" cy="11" r="6.5" />
+      <path d="m16 16 4 4" />
+    </Icon>
+  );
+}
+
+export function PlusIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M12 5v14M5 12h14" />
+    </Icon>
+  );
+}
+
+/** Points toward the reading direction's "forward"; mirror with `rtl:-scale-x-100`. */
+export function ChevronForwardIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="m9 6 6 6-6 6" />
+    </Icon>
+  );
+}

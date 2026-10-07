@@ -32,3 +32,8 @@ export function formatDate(
     timeZone: "Africa/Lagos",
   }).format(date);
 }
+
+/** A calendar date stored as YYYY-MM-DD (e.g. a date of birth), without time-zone drift. */
+export function formatDay(value: string | null | undefined, locale: Locale): string | null {
+  return value ? formatDate(new Date(`${value}T12:00:00Z`), locale) : null;
+}
