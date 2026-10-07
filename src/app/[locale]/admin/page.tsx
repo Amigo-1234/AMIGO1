@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ProfileNameForm } from "@/components/auth/profile-name-form";
 import { SignOutForm } from "@/components/auth/sign-out-form";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SkipLink } from "@/components/layout/skip-link";
@@ -28,7 +29,7 @@ export async function generateMetadata({
 export default async function AdminPage({ searchParams }: PageProps<"/[locale]/admin">) {
   const { locale, t } = await getDictionary();
   const access = await requireStaff(locale);
-  const { denied } = await searchParams;
+  const { denied, name } = await searchParams;
   const permissions = [...access.permissions].sort();
 
   return (
@@ -50,6 +51,11 @@ export default async function AdminPage({ searchParams }: PageProps<"/[locale]/a
         {denied && (
           <Notice tone="warning" className="mb-6">
             {t.admin.denied}
+          </Notice>
+        )}
+        {name === "saved" && (
+          <Notice tone="info" className="mb-6">
+            {t.admin.nameSaved}
           </Notice>
         )}
         <p className="text-xs font-semibold tracking-[0.18em] text-gold-700 uppercase">
@@ -96,6 +102,19 @@ export default async function AdminPage({ searchParams }: PageProps<"/[locale]/a
             </ul>
           </Card>
         </div>
+        <Card className="mt-4 p-5">
+          <ProfileNameForm
+            locale={locale}
+            currentName={access.fullName}
+            messages={{
+              label: t.admin.nameTitle,
+              hint: t.admin.nameHint,
+              submit: t.admin.nameSave,
+              submitting: t.admin.nameSaving,
+              errors: { invalid_input: t.admin.nameInvalid, server: t.auth.serverError },
+            }}
+          />
+        </Card>
         <p className="mt-8 text-charcoal-700">{t.admin.comingSoon}</p>
       </main>
     </div>

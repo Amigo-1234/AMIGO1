@@ -108,6 +108,12 @@ export const ar: Dictionary = {
     permissionCount: "{count} صلاحية",
     comingSoon: "ستصل لوحة الإدارة في مرحلة قادمة.",
     denied: "لا تملك صلاحية فتح تلك الصفحة.",
+    nameTitle: "اسمك",
+    nameHint: "يظهر لبقية الموظفين. صحّحه هنا إن كان خاطئًا.",
+    nameSave: "حفظ الاسم",
+    nameSaving: "جارٍ الحفظ…",
+    nameSaved: "تم تحديث اسمك.",
+    nameInvalid: "أدخل اسمك الكامل (حتى 120 حرفًا).",
   },
   footer: {
     copyright: "© {year} مركز الجنة",

@@ -18,7 +18,13 @@ import {
   bootstrapSuperAdmin,
   isBootstrapAvailable,
 } from "./bootstrap";
-import { grantRole, revokeRole, setStaffStatus } from "./management";
+import {
+  grantRole,
+  normalizeStaffName,
+  revokeRole,
+  setStaffStatus,
+  updateOwnName,
+} from "./management";
 import {
   StaffAuthenticationError,
   type StaffAuthState,
@@ -209,6 +215,25 @@ describe("staff management", () => {
     if (s.status !== "ok") throw new Error("expected access");
     return s.access;
   }
+
+  it("lets staff correct their own display name, keeping the old value in the audit log", async () => {
+    const { identity: id, staff } = await staffWithRoles([]);
+    const state = await stateFor(id);
+    if (state.status !== "ok") throw new Error("expected access");
+    expect(await updateOwnName(db, state.access, "  Aisha   Bello ")).toBe("updated");
+    expect(await updateOwnName(db, state.access, "Aisha Bello")).toBe("unchanged");
+    const [row] = await db.select().from(staffUsers).where(eq(staffUsers.id, staff.id));
+    expect(row.fullName).toBe("Aisha Bello");
+    const [audit] = await db
+      .select()
+      .from(auditLogs)
+      .where(eq(auditLogs.action, "staff.name_changed"));
+    expect(audit.targetId).toBe(staff.id);
+    expect(audit.metadata).toEqual({ from: staff.fullName, to: "Aisha Bello" });
+    expect(normalizeStaffName("   ")).toBeNull();
+    expect(normalizeStaffName("x".repeat(121))).toBeNull();
+    await expect(updateOwnName(db, state.access, " ")).rejects.toThrow();
+  });
 
   it("requires staff.manage", async () => {
     const registrar = await stateFor((await staffWithRoles(["registrar"])).identity);

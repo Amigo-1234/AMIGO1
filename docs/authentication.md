@@ -198,6 +198,7 @@ For migrated families only (imported in a later phase):
 | `staff.bootstrapped`                        | First Super Admin created         |
 | `staff.enabled` / `staff.disabled`          | Staff status changed              |
 | `staff.role_granted` / `staff.role_revoked` | Role assignment changed           |
+| `staff.name_changed`                        | Staff corrected own display name  |
 | `student.pin_migrated`                      | Legacy password replaced by a PIN |
 
 ## Configuration

@@ -133,4 +133,41 @@ export async function revokeRole(
   });
 }
 
+/** Display names: trimmed, inner whitespace collapsed, 1–120 characters. */
+export function normalizeStaffName(value: string): string | null {
+  const name = value.replace(/\s+/g, " ").trim();
+  return name.length >= 1 && name.length <= 120 ? name : null;
+}
+
+/**
+ * A staff member corrects their own display name. Needs no permission (it is their own
+ * record and grants nothing); the previous value is kept in the audit entry.
+ */
+export async function updateOwnName(
+  db: DbExecutor,
+  actor: StaffAccess,
+  fullName: string,
+): Promise<"updated" | "unchanged"> {
+  const name = normalizeStaffName(fullName);
+  if (!name) throw new Error("A name of 1 to 120 characters is required");
+  return db.transaction(async (tx) => {
+    const [current] = await tx
+      .select({ fullName: staffUsers.fullName })
+      .from(staffUsers)
+      .where(eq(staffUsers.id, actor.staffId))
+      .for("update");
+    if (!current) throw new StaffManagementError("not_found");
+    if (current.fullName === name) return "unchanged" as const;
+    await tx.update(staffUsers).set({ fullName: name }).where(eq(staffUsers.id, actor.staffId));
+    await recordAudit(tx, {
+      actor: { type: "staff", userId: actor.staffId, label: actor.email },
+      action: "staff.name_changed",
+      targetType: "staff_user",
+      targetId: actor.staffId,
+      metadata: { from: current.fullName, to: name },
+    });
+    return "updated" as const;
+  });
+}
+
 export { AuthorizationError };

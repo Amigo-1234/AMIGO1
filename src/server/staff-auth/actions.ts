@@ -20,6 +20,8 @@ import {
 import { getClientAddress } from "../request";
 import { resolveStaffAccess } from "./access";
 import { BootstrapUnavailableError, bootstrapSuperAdmin, isBootstrapAvailable } from "./bootstrap";
+import { authorizeStaffAction } from "./current";
+import { normalizeStaffName, updateOwnName } from "./management";
 import { getNeonAuth } from "./neon-config";
 
 /*
@@ -238,4 +240,29 @@ export async function setupFirstAdminAction(
     return { error: "server", fullName, email: input.email };
   }
   redirect(localizedPath(locale, "/admin"));
+}
+
+export type ProfileNameState = { error?: "invalid_input" | "server"; fullName?: string };
+
+/** The signed-in staff member corrects their own display name (re-verified server-side). */
+export async function updateOwnNameAction(
+  _previous: ProfileNameState,
+  formData: FormData,
+): Promise<ProfileNameState> {
+  const locale = formLocale(formData);
+  const fullName = String(formData.get("fullName") ?? "").slice(0, 200);
+  let access;
+  try {
+    access = await authorizeStaffAction();
+  } catch {
+    redirect(localizedPath(locale, "/staff/login?reason=expired"));
+  }
+  const name = normalizeStaffName(fullName);
+  if (!name) return { error: "invalid_input", fullName };
+  try {
+    await updateOwnName(getDb(), access, name);
+  } catch {
+    return { error: "server", fullName };
+  }
+  redirect(localizedPath(locale, "/admin?name=saved"));
 }
