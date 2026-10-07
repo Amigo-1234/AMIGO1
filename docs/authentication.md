@@ -225,6 +225,15 @@ For migrated families only (imported in a later phase):
 4. After the first Super Admin exists, disable open sign-up in Neon Auth if the console
    offers that option (sign-ups would not grant access anyway, but fewer accounts is better).
 
+### Production setup (record)
+
+- Site: `https://www.markazulginna.com.ng` (the apex domain redirects to `www`), served by
+  the Vercel project `markazilginna` from `main`.
+- Neon Auth is enabled on the production branch with email and password sign-in; email
+  verification is off; trusted domains are the two production domains (no localhost).
+- Vercel Production holds every variable in the table above; values live only in Vercel,
+  GitHub Actions secrets and the owner's password manager.
+
 ## Tests
 
 - `src/server/student-auth/student-auth.test.ts`: every student case (permanent ID, alias,
