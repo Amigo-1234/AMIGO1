@@ -112,6 +112,12 @@ export const en = {
     permissionCount: "{count} permissions",
     comingSoon: "The administration dashboard arrives in an upcoming phase.",
     denied: "You do not have permission to open that page.",
+    nameTitle: "Your name",
+    nameHint: "Shown to other staff. Correct it here if it is wrong.",
+    nameSave: "Save name",
+    nameSaving: "Saving…",
+    nameSaved: "Your name has been updated.",
+    nameInvalid: "Enter your full name (up to 120 characters).",
   },
   footer: {
     copyright: "© {year} Markaz il Ginna",

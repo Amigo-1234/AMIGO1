@@ -41,7 +41,9 @@ export function SetupForm({ locale, messages }: { locale: Locale; messages: Setu
         name="fullName"
         label={messages.fullName}
         defaultValue={state.fullName}
-        autoComplete="name"
+        // "off", not "name": iOS contact AutoFill otherwise replaces a typed name with the
+        // device owner's contact-card name when the email field is filled.
+        autoComplete="off"
         required
         maxLength={120}
       />
