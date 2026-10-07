@@ -13,7 +13,7 @@ export function SubmitButton({
 }: {
   label: string;
   pendingLabel: string;
-  variant?: "primary" | "secondary" | "ghost";
+  variant?: "primary" | "secondary" | "ghost" | "danger";
   size?: "md" | "lg";
   block?: boolean;
 }) {

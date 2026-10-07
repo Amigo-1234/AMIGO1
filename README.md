@@ -49,6 +49,7 @@ Run `npm run check && npm run build` before merging any branch.
 - [Setup](docs/setup.md): local development, environment variables, deployment
 - [Architecture](docs/architecture.md): structure, i18n, design system, security, decisions
 - [Authentication](docs/authentication.md): staff (Neon Auth), students (ID + PIN), permissions, setup
+- [Administration](docs/admin.md): staff workspace screens, permissions, business rules, audit events
 - [Database](docs/database.md): schema, integrity rules, migrations, seed
 - [Database migration](docs/database-migration.md): moving V1 Firestore data into PostgreSQL
 - [Legacy V1](docs/legacy-v1.md): business rules carried over from the First Edition

@@ -122,6 +122,15 @@
 }
 
 /* Utilities for the few things Tailwind does not express directly. */
+
+/*
+ * Text typed by people (names, addresses, notes, reasons) may be Latin inside Arabic pages
+ * or the reverse. Each line takes its direction from its own content, while alignment still
+ * follows the page, so "12 Ilorin Road." is never reordered in Arabic.
+ */
+@utility user-text {
+  unicode-bidi: plaintext;
+}
 @utility focus-ring-on-dark {
   &:focus-visible {
     outline-color: var(--color-gold-300);
