@@ -39,7 +39,7 @@ export async function readNeonSession(): Promise<NeonSessionSnapshot> {
 
 /** The current staff authorization state, computed once per request. */
 export const getCurrentStaff = cache(async (): Promise<StaffAuthState> =>
-  evaluateStaffSession(getDb(), await readNeonSession()),
+  evaluateStaffSession(getDb, await readNeonSession()),
 );
 
 /** For pages: the active staff member, or a redirect to the localized sign-in page. */
