@@ -226,7 +226,10 @@ export async function restoreStudent(
 }
 
 /** The status recorded by the most recent archiving of this student, if any. */
-async function statusBeforeArchive(db: DbExecutor, studentId: string): Promise<string | null> {
+export async function statusBeforeArchive(
+  db: DbExecutor,
+  studentId: string,
+): Promise<string | null> {
   const [entry] = await db
     .select({ from: sql<string | null>`${auditLogs.metadata} ->> 'from'` })
     .from(auditLogs)
