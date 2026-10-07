@@ -201,6 +201,60 @@ describe("sessions, terms and enrollments", () => {
     );
   });
 
+  it("lets a locked policy receive a missing pass mark and remarks once, never change them", async () => {
+    const [policy] = await db
+      .insert(gradingPolicies)
+      .values({ name: "Detail lock policy", caMax: 40, examMax: 60 })
+      .returning();
+    await db
+      .insert(gradeBands)
+      .values({ policyId: policy.id, grade: "A", minScore: 0, maxScore: 100 });
+    await db
+      .insert(academicSessions)
+      .values({ startYear: freshYear(), gradingPolicyId: policy.id, status: "closed" });
+    const byPolicy = eq(gradeBands.policyId, policy.id);
+    const thePolicy = eq(gradingPolicies.id, policy.id);
+
+    // Completing what was never set is allowed, once.
+    await db.update(gradingPolicies).set({ passMark: 50 }).where(thePolicy);
+    await db.update(gradeBands).set({ remarkEn: "Excellent", remarkAr: "ممتاز" }).where(byPolicy);
+    // Changing it afterwards is not.
+    await expectDbError(
+      db.update(gradingPolicies).set({ passMark: 40 }).where(thePolicy),
+      /locked/,
+    );
+    await expectDbError(db.update(gradeBands).set({ remarkEn: "Great" }).where(byPolicy), /locked/);
+    await expectDbError(
+      db.update(gradeBands).set({ remarkAr: null }).where(byPolicy),
+      /locked grading policy/,
+    );
+    await expectDbError(
+      db.insert(gradeBands).values({ policyId: policy.id, grade: "B", minScore: 0, maxScore: 0 }),
+      /locked grading policy/,
+    );
+    await expectDbError(
+      db.execute(sql`UPDATE grading_policies SET pass_mark = 101 WHERE id = ${policy.id}`),
+      /grading_policies_pass_mark|locked/,
+    );
+  });
+
+  it("seeds the standard policy with the school's pass mark and remarks", async () => {
+    const [standard] = await db
+      .select()
+      .from(gradingPolicies)
+      .where(eq(gradingPolicies.name, "Standard (CA 40 / Exam 60)"));
+    expect(standard.passMark).toBe(50);
+    const bands = await db.select().from(gradeBands).where(eq(gradeBands.policyId, standard.id));
+    expect(Object.fromEntries(bands.map((b) => [b.grade, [b.remarkEn, b.remarkAr]]))).toEqual({
+      A: ["Excellent", "ممتاز"],
+      B: ["Very good", "جيد جدًا"],
+      C: ["Good", "جيد"],
+      D: ["Fair", "مقبول"],
+      E: ["Weak", "ضعيف"],
+      F: ["Fail", "راسب"],
+    });
+  });
+
   it("allows one enrollment per session and one active enrollment per student", async () => {
     const a = await createSession(db, 2042);
     const b = await createSession(db, 2043);

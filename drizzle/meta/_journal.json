@@ -15,6 +15,20 @@
       "when": 1791308826870,
       "tag": "0001_integrity_safeguards",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791384423133,
+      "tag": "0002_grading_pass_mark",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791384441409,
+      "tag": "0003_grading_policy_details",
+      "breakpoints": true
     }
   ]
 }
