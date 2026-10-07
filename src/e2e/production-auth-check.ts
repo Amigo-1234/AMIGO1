@@ -144,6 +144,31 @@ async function checkStaffBootstrap(db: DbExecutor) {
 
   const [{ count }] = await db.select({ count: sql<number>`count(*)::int` }).from(staffUsers);
   console.log(`INFO  Staff records: ${count}`);
+
+  // Display-name diagnosis without printing any name (Actions logs may be public): where
+  // did the stored staff name come from?
+  for (const admin of active) {
+    const [row] = await db
+      .select({ fullName: staffUsers.fullName })
+      .from(staffUsers)
+      .where(eq(staffUsers.id, admin.id));
+    const name = row?.fullName ?? "";
+    let authName: string | null = null;
+    try {
+      const result = await db.execute(
+        sql`SELECT name FROM neon_auth."user" WHERE id::text = ${admin.authUserId} LIMIT 1`,
+      );
+      authName = ((result as unknown as { rows: { name: string | null }[] }).rows[0]?.name ??
+        null) as string | null;
+    } catch {
+      console.log("INFO  Neon Auth user table not readable from the app database");
+    }
+    console.log(
+      `INFO  Super Admin name: ${name.trim().split(/\s+/).length} word(s), ` +
+        `equals "amigo" (any case): ${name.trim().toLowerCase() === "amigo"}, ` +
+        `matches Neon Auth sign-up name: ${authName === null ? "unknown" : authName === name}`,
+    );
+  }
 }
 
 function randomStrongPin(): string {
