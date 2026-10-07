@@ -30,6 +30,7 @@ src/
     icon.svg              App icon
   components/
     ui/                   Generic primitives: Button, TextField, Card, Badge, Notice
+    admin/                Admin shell, navigation, form controls and page parts
     brand/                Mark, lockup, geometric pattern, arch, ornament
     layout/               Site header/footer, auth shell, language switcher, skip link
     icons/                Inline SVG icons
@@ -52,6 +53,7 @@ src/
   server/                 Server-only application logic
     auth/                 Credential hashing, keyed hashes, sign-in throttling
     staff-auth/           Neon Auth integration, staff access, permissions, bootstrap
+    admin/                Staff workspace services, read models and Server Actions
     student-auth/         Student ID + PIN sign-in, sessions, legacy PIN migration
     audit.ts              Audit log writer
   lib/                    Framework-free helpers (env, geometry, brand constants)
@@ -61,7 +63,8 @@ docs/                     Project documentation
 ```
 
 Authenticated areas: `/<locale>/portal/...` (students and parents) and
-`/<locale>/admin/...` (staff). See [`authentication.md`](authentication.md).
+`/<locale>/admin/...` (staff). See [`authentication.md`](authentication.md) and, for the
+staff workspace, [`admin.md`](admin.md).
 
 ## Internationalisation
 
@@ -154,8 +157,10 @@ Planned (Phase 10): nonce-based Content-Security-Policy and further hardening.
 2. **Database**: Neon + Drizzle schema, migrations, seeds, database utilities.
 3. **Authentication and authorisation**: staff auth, roles and permissions, secure
    student sign-in.
-4. **Academic core**: sessions, terms, levels, subjects, students, enrolments.
-5. **Admin experience**: admin shell, dashboard, registration and student management.
+4. **Admin operations core**: admin shell, dashboard, student directory, registration,
+   profiles, lifecycle, guardians, sessions, terms and enrolments. See [`admin.md`](admin.md).
+5. **Admin experience**: admin shell, dashboard, registration and student management
+   (the core of this was delivered in phase 4).
 6. **Results**: score entry, validation, grading, ranking, publication.
 7. **Student portal**: overview, results, fees, history, profile.
 8. **Finance**: fees, payment ledger, receipts and statements.

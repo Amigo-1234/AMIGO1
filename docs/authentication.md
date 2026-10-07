@@ -201,6 +201,9 @@ For migrated families only (imported in a later phase):
 | `staff.name_changed`                        | Staff corrected own display name  |
 | `student.pin_migrated`                      | Legacy password replaced by a PIN |
 
+Student, guardian, enrollment, session and term events are listed in
+[`admin.md`](admin.md#audit-events-added).
+
 ## Configuration
 
 | Variable                  | Purpose                                                  | Production | Preview | Development |
