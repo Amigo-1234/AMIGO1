@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { isLocale } from "@/i18n/config";
+import { dictionaries } from "@/i18n/dictionaries";
 import { AdminForm, Checkbox, FieldGroup, Input } from "@/components/admin/form";
 import { PageHeader, Section } from "@/components/admin/page-parts";
 import { GuardianFields } from "@/components/admin/student-fields";
@@ -14,7 +16,12 @@ import { addGuardianAction, linkGuardianAction } from "@/server/admin/actions";
 import { loadStudentPage } from "@/server/admin/load";
 import { searchGuardians } from "@/server/admin/queries";
 
-export const metadata: Metadata = { robots: { index: false } };
+export async function generateMetadata({
+  params,
+}: PageProps<"/[locale]/admin/students/[id]/guardians/new">): Promise<Metadata> {
+  const { locale } = await params;
+  return isLocale(locale) ? { title: dictionaries[locale].admin.guardians.addTitle } : {};
+}
 
 /** Add a guardian: first offer existing guardians (siblings), then a new-guardian form. */
 export default async function AddGuardianPage({

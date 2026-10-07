@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, type ReactNode, useActionState, useContext } from "react";
+import { createContext, type ReactNode, useActionState, useContext, useId } from "react";
 import { SubmitButton } from "@/components/auth/submit-button";
 import { inputClasses } from "@/components/ui/field";
 import { Notice } from "@/components/ui/notice";
@@ -12,9 +12,16 @@ type Action = (state: AdminFormState, formData: FormData) => Promise<AdminFormSt
 type FormContextValue = {
   state: AdminFormState;
   fieldMessages: Record<string, string>;
+  /** Unique per form, so several forms on one page never share field ids. */
+  formId: string;
 };
 
-const FormContext = createContext<FormContextValue>({ state: {}, fieldMessages: {} });
+const FormContext = createContext<FormContextValue>({ state: {}, fieldMessages: {}, formId: "f" });
+
+function useFieldId(name: string) {
+  const { formId } = useContext(FormContext);
+  return `${formId}-${name.replace(/\W/g, "-")}`;
+}
 
 /**
  * A form posting to an admin Server Action. Server-side validation results come back as
@@ -47,9 +54,10 @@ export function AdminForm({
   className?: string;
 }) {
   const [state, formAction] = useActionState(action, {});
+  const formId = `f${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
   const message = state.error ? (messages[state.error] ?? messages.server) : null;
   return (
-    <FormContext.Provider value={{ state, fieldMessages }}>
+    <FormContext.Provider value={{ state, fieldMessages, formId }}>
       <form action={formAction} className={cn("flex flex-col gap-5", className)} noValidate>
         <input type="hidden" name="locale" value={locale} />
         {Object.entries(hidden).map(([name, value]) => (
@@ -151,7 +159,7 @@ export function Input({
   maxLength?: number;
 }) {
   const { error, value } = useField(name, initial);
-  const id = `f-${name.replace(/\W/g, "-")}`;
+  const id = useFieldId(name);
   return (
     <FieldFrame id={id} label={label} hint={hint} error={error} optional={optional} wide={wide}>
       <input
@@ -163,7 +171,7 @@ export function Input({
         inputMode={inputMode}
         maxLength={maxLength}
         required={required}
-        dir={ltr ? "ltr" : undefined}
+        dir={ltr ? "ltr" : type === "text" ? "auto" : undefined}
         aria-invalid={error ? true : undefined}
         aria-describedby={describedBy(id, hint, error)}
         className={cn(inputClasses, ltr && "text-start rtl:text-end")}
@@ -184,13 +192,14 @@ export function TextArea({
   wide = true,
 }: Common & { rows?: number; maxLength?: number }) {
   const { error, value } = useField(name, initial);
-  const id = `f-${name.replace(/\W/g, "-")}`;
+  const id = useFieldId(name);
   return (
     <FieldFrame id={id} label={label} hint={hint} error={error} optional={optional} wide={wide}>
       <textarea
         id={id}
         name={name}
         rows={rows}
+        dir="auto"
         defaultValue={value}
         maxLength={maxLength}
         required={required}
@@ -214,7 +223,7 @@ export function Select({
   wide,
 }: Common & { options: { value: string; label: string }[]; placeholder?: string }) {
   const { error, value } = useField(name, initial);
-  const id = `f-${name.replace(/\W/g, "-")}`;
+  const id = useFieldId(name);
   return (
     <FieldFrame id={id} label={label} hint={hint} error={error} optional={optional} wide={wide}>
       <select
@@ -253,7 +262,7 @@ export function Checkbox({
   const code = state.fieldErrors?.[name];
   const error = code ? (fieldMessages[code] ?? code) : undefined;
   const checked = state.values ? state.values[name] === "on" : initial;
-  const id = `f-${name.replace(/\W/g, "-")}`;
+  const id = useFieldId(name);
   return (
     <div className="flex flex-col gap-1 sm:col-span-2">
       <label htmlFor={id} className="flex min-h-11 items-start gap-3">

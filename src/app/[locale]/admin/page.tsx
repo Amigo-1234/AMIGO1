@@ -24,7 +24,10 @@ export async function generateMetadata({
   params,
 }: PageProps<"/[locale]/admin">): Promise<Metadata> {
   const { locale } = await params;
-  return isLocale(locale) ? { title: dictionaries[locale].admin.dashboard.title } : {};
+  if (!isLocale(locale)) return {};
+  const t = dictionaries[locale].admin;
+  // Same "page · Staff area" title as the other admin pages (this page shares the layout's segment).
+  return { title: { absolute: `${t.dashboard.title} · ${t.title}` } };
 }
 
 /** Dashboard built from live database counts only; nothing is estimated or sample data. */
@@ -38,13 +41,16 @@ export default async function DashboardPage({ searchParams }: PageProps<"/[local
   const canCreate = hasPermission(access, "students.create");
   const canManageSessions = hasPermission(access, "sessions.manage");
   const num = (value: number) => formatNumber(value, locale);
+  const data = canRead ? await getDashboard(getDb()) : null;
+  // Registering needs a session (the ID contains its year), so the shortcut waits for one.
+  const showRegister = canCreate && !!data?.session;
 
   const header = (
     <PageHeader
       eyebrow={d.title}
       title={interpolate(d.greeting, { name: access.fullName })}
       actions={
-        canCreate ? (
+        showRegister ? (
           <ButtonLink href={href("/admin/students/new")}>
             <PlusIcon className="size-4" />
             {d.register}
@@ -62,7 +68,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/[local
     </p>
   ) : null;
 
-  if (!canRead) {
+  if (!data) {
     return (
       <>
         {header}
@@ -71,7 +77,6 @@ export default async function DashboardPage({ searchParams }: PageProps<"/[local
     );
   }
 
-  const data = await getDashboard(getDb());
   const other =
     (data.byStatus.suspended ?? 0) + (data.byStatus.withdrawn ?? 0) + (data.byStatus.archived ?? 0);
   const maxLevel = Math.max(1, ...data.byLevel.map((l) => l.count));
@@ -218,7 +223,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/[local
                   >
                     <span className="min-w-0">
                       <span className="block truncate font-semibold text-charcoal-900">
-                        {student.fullName}
+                        <span className="user-text">{student.fullName}</span>
                       </span>
                       <span
                         dir="ltr"

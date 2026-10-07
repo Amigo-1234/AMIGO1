@@ -4,10 +4,11 @@ import { z } from "zod";
  * Validation for admin forms. Pure (no server imports): the server is the authority and
  * re-validates every submission; the same rules can give the browser instant feedback.
  *
- * Errors are short codes (`required`, `too_long`, `invalid`, `future`), translated by the
+ * Errors are short codes (`required`, `too_long`, `too_short`, `invalid`, `future`), translated by the
  * page, so messages exist in both languages.
  */
-export type FieldErrorCode = "required" | "too_long" | "invalid" | "future" | "too_early";
+export type FieldErrorCode =
+  "required" | "too_long" | "too_short" | "invalid" | "future" | "too_early";
 export type FieldErrors<K extends string = string> = Partial<Record<K, FieldErrorCode>>;
 export type Parsed<T, K extends string = string> =
   { ok: true; data: T } | { ok: false; errors: FieldErrors<K> };
@@ -68,7 +69,7 @@ class Collector<K extends string> {
     const value = cleanText(input[field]);
     if (!value) return required ? this.fail(field, "required") : null;
     if (value.length > max) return this.fail(field, "too_long");
-    if (value.length < min) return this.fail(field, "invalid");
+    if (value.length < min) return this.fail(field, "too_short");
     return value;
   }
   multiline(input: Input, field: K, max: number): string | null {

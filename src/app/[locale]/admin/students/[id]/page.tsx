@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { isLocale } from "@/i18n/config";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
@@ -13,7 +14,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { isUuid } from "@/domain/admin-input";
 import { allowedStatusChanges } from "@/domain/student-lifecycle";
 import { getDb } from "@/db/client";
-import type { Dictionary } from "@/i18n/dictionaries";
+import { type Dictionary, dictionaries } from "@/i18n/dictionaries";
 import { formatDate, formatDay, formatNumber, interpolate } from "@/i18n/format";
 import { localizedPath } from "@/i18n/paths";
 import { getDictionary } from "@/i18n/server";
@@ -22,7 +23,12 @@ import { hasPermission } from "@/server/staff-auth/access";
 import { requireStaffPermission } from "@/server/staff-auth/current";
 import { canSignIn } from "@/server/student-auth/rules";
 
-export const metadata: Metadata = { robots: { index: false } };
+export async function generateMetadata({
+  params,
+}: PageProps<"/[locale]/admin/students/[id]">): Promise<Metadata> {
+  const { locale } = await params;
+  return isLocale(locale) ? { title: dictionaries[locale].admin.profile.title } : {};
+}
 
 type Activity = Awaited<ReturnType<typeof studentActivity>>[number];
 
@@ -80,7 +86,7 @@ export default async function StudentProfilePage({
         }
         title={
           <span className="flex flex-wrap items-center gap-3">
-            {student.fullName}
+            <span className="user-text">{student.fullName}</span>
             <StudentStatusBadge status={student.status} t={t} />
           </span>
         }
@@ -143,11 +149,9 @@ export default async function StudentProfilePage({
               {current ? (
                 <p className="mt-0.5 text-lg font-semibold text-brand-950">
                   {levelName(current)} <span className="text-stone-600">({current.levelCode})</span>
-                  <span
-                    dir="ltr"
-                    className="ms-2 text-base font-normal text-charcoal-700 tabular-nums"
-                  >
-                    {current.sessionLabel}
+                  {/* The margin sits outside the LTR span so it follows the page direction. */}
+                  <span className="ms-2 text-base font-normal text-charcoal-700 tabular-nums">
+                    <span dir="ltr">{current.sessionLabel}</span>
                   </span>
                 </p>
               ) : (
@@ -210,7 +214,7 @@ export default async function StudentProfilePage({
                   <li key={g.id} className="rounded-md border border-stone-200 p-4">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <p className="font-semibold text-charcoal-900">{g.fullName}</p>
+                        <p className="user-text font-semibold text-charcoal-900">{g.fullName}</p>
                         {g.relationship && (
                           <p className="text-sm text-charcoal-700">{g.relationship}</p>
                         )}
@@ -350,7 +354,9 @@ export default async function StudentProfilePage({
                         <p className="font-semibold text-charcoal-900">
                           {labels[entry.action] ?? labels.other}
                         </p>
-                        {detail && <p className="break-words text-charcoal-700">{detail}</p>}
+                        {detail && (
+                          <p className="user-text break-words text-charcoal-700">{detail}</p>
+                        )}
                         <p className="text-stone-600">
                           {formatDate(entry.occurredAt, locale)}
                           {(entry.actorName ?? entry.actorLabel) &&

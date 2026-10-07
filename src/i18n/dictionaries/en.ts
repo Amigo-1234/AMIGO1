@@ -169,6 +169,7 @@ export const en = {
     fieldErrors: {
       required: "This field is required.",
       too_long: "This is too long.",
+      too_short: "This is too short.",
       invalid: "Check this value.",
       future: "This date cannot be in the future.",
       too_early: "This date is too early.",
@@ -323,6 +324,7 @@ export const en = {
       noSessionsAsk: "Ask a staff member who manages sessions to create one.",
     },
     profile: {
+      title: "Student profile",
       identity: "Identity",
       studentIds: "Student IDs",
       primaryId: "Permanent ID",
@@ -387,7 +389,7 @@ export const en = {
       effects: "What happens",
       effect: {
         active:
-          "The student is back at school and can sign in to the portal. A withdrawn student needs to be placed in a class again.",
+          "The student is back at school and can sign in to the portal. If the session they left is still open, they return to their place in it; otherwise place them in a class.",
         suspended:
           "Temporary. The class placement stays; portal sign-in is blocked until reactivated.",
         withdrawn:

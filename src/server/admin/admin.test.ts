@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { StudentIntake } from "@/domain/admin-input";
 import {
@@ -298,6 +298,20 @@ describe("editing and lifecycle", () => {
     await changeStudentStatus(db, registrar, { studentId: id, to: "active", reason: "Readmitted" });
     const [student] = await db.select().from(students).where(eq(students.id, id));
     expect(student.status).toBe("active");
+    // Back within the same open session: their place in it is reopened, not duplicated.
+    [enrollment] = await db.select().from(enrollments).where(eq(enrollments.studentId, id));
+    expect(enrollment).toMatchObject({ status: "active", endedOn: null });
+    const [entry] = await db
+      .select()
+      .from(auditLogs)
+      .where(and(eq(auditLogs.targetId, id), eq(auditLogs.action, "student.status_changed")))
+      .orderBy(desc(auditLogs.id))
+      .limit(1);
+    expect(entry.metadata).toMatchObject({
+      from: "withdrawn",
+      to: "active",
+      reopenedEnrollmentId: enrollment.id,
+    });
   });
 
   it("archives and restores to the previous status, never deleting the record", async () => {
@@ -320,9 +334,30 @@ describe("editing and lifecycle", () => {
     ).toBe("suspended");
     [student] = await db.select().from(students).where(eq(students.id, id));
     expect(student).toMatchObject({ status: "suspended", archivedAt: null });
+    const [placement] = await db.select().from(enrollments).where(eq(enrollments.studentId, id));
+    expect(placement.status).toBe("active");
     await expect(restoreStudent(db, registrar, { studentId: id, reason: "Again" })).rejects.toEqual(
       ruleError("not_archived"),
     );
+  });
+});
+
+describe("returning students", () => {
+  it("does not reopen a placement in a closed session; the student is placed again instead", async () => {
+    const session = await newSession("active");
+    const { id } = await registerStudent(db, registrar, await intake(session.id));
+    await changeStudentStatus(db, registrar, { studentId: id, to: "withdrawn", reason: "Left" });
+    await db
+      .update(academicSessions)
+      .set({ status: "closed" })
+      .where(eq(academicSessions.id, session.id));
+    await changeStudentStatus(db, registrar, {
+      studentId: id,
+      to: "active",
+      reason: "Back next year",
+    });
+    const rows = await db.select().from(enrollments).where(eq(enrollments.studentId, id));
+    expect(rows.map((r) => r.status)).toEqual(["withdrawn"]);
   });
 });
 

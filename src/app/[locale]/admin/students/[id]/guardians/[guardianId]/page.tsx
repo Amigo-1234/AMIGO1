@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { isLocale } from "@/i18n/config";
+import { dictionaries } from "@/i18n/dictionaries";
 import { notFound } from "next/navigation";
 import { AdminForm, Checkbox, FieldGroup, TextArea } from "@/components/admin/form";
 import { PageHeader, Section } from "@/components/admin/page-parts";
@@ -11,7 +13,12 @@ import { unlinkGuardianAction, updateGuardianAction } from "@/server/admin/actio
 import { loadStudentPage } from "@/server/admin/load";
 import { getGuardian } from "@/server/admin/queries";
 
-export const metadata: Metadata = { robots: { index: false } };
+export async function generateMetadata({
+  params,
+}: PageProps<"/[locale]/admin/students/[id]/guardians/[guardianId]">): Promise<Metadata> {
+  const { locale } = await params;
+  return isLocale(locale) ? { title: dictionaries[locale].admin.guardians.editTitle } : {};
+}
 
 /** Edit a guardian (shared details + this student's link) or remove them from this student. */
 export default async function EditGuardianPage({

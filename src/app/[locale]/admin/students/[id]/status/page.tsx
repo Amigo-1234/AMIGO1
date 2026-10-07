@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { isLocale } from "@/i18n/config";
+import { dictionaries } from "@/i18n/dictionaries";
 import { AdminForm, Checkbox, RadioGroup, TextArea } from "@/components/admin/form";
 import { PageHeader, StudentStatusBadge } from "@/components/admin/page-parts";
 import { Card } from "@/components/ui/card";
@@ -10,7 +12,12 @@ import { changeStatusAction, restoreStudentAction } from "@/server/admin/actions
 import { loadStudentPage } from "@/server/admin/load";
 import { statusBeforeArchive } from "@/server/admin/students";
 
-export const metadata: Metadata = { robots: { index: false } };
+export async function generateMetadata({
+  params,
+}: PageProps<"/[locale]/admin/students/[id]/status">): Promise<Metadata> {
+  const { locale } = await params;
+  return isLocale(locale) ? { title: dictionaries[locale].admin.status.title } : {};
+}
 
 /** Status changes need a reason and an explicit confirmation; the effects are spelled out. */
 export default async function StudentStatusPage({

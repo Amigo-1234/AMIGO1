@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { isLocale } from "@/i18n/config";
+import { dictionaries } from "@/i18n/dictionaries";
 import { notFound, redirect } from "next/navigation";
-import { AdminForm, Checkbox, FieldGroup, Input } from "@/components/admin/form";
+import { AdminForm, Checkbox, Input } from "@/components/admin/form";
 import { DoneNotice, PageHeader, Section } from "@/components/admin/page-parts";
 import { Badge } from "@/components/ui/badge";
 import { Notice } from "@/components/ui/notice";
@@ -19,7 +21,12 @@ import { getSession } from "@/server/admin/queries";
 import { hasPermission } from "@/server/staff-auth/access";
 import { requireStaff } from "@/server/staff-auth/current";
 
-export const metadata: Metadata = { robots: { index: false } };
+export async function generateMetadata({
+  params,
+}: PageProps<"/[locale]/admin/academics/sessions/[sessionId]">): Promise<Metadata> {
+  const { locale } = await params;
+  return isLocale(locale) ? { title: dictionaries[locale].admin.fields.session } : {};
+}
 
 const tone = (status: string) =>
   status === "active" ? "success" : status === "planned" ? "accent" : "neutral";
@@ -171,7 +178,8 @@ export default async function SessionPage({
               hidden={{ sessionId: session.id }}
               submit={s.saveDates}
             >
-              <FieldGroup title={s.dates} description={s.datesHint}>
+              <p className="text-sm text-charcoal-700">{s.datesHint}</p>
+              <div className="grid gap-4 sm:grid-cols-2">
                 <Input
                   name="startsOn"
                   type="date"
@@ -184,7 +192,7 @@ export default async function SessionPage({
                   label={t.admin.fields.endsOn}
                   initial={session.endsOn}
                 />
-              </FieldGroup>
+              </div>
             </AdminForm>
           </Section>
         )}

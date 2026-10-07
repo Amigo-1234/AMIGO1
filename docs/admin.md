@@ -52,7 +52,10 @@ archived; suspended → active, withdrawn, archived; withdrawn → active (readm
 graduated → archived. Graduation happens only through promotion (a later phase). Each
 change needs a reason and a confirmation tick. Leaving (withdrawn, archived) ends the
 current placement as `withdrawn`; any status other than active revokes open portal
-sessions. Archived records are read-only and hidden from the default directory; restoring
+sessions. Coming back (readmission, or restoring to active or suspended) reopens the
+placement the student left if its session is still open, because a student has only one
+enrollment per session; otherwise the student is placed again. The withdrawal stays in
+the audit log. Archived records are read-only and hidden from the default directory; restoring
 returns the student to the status they had before archiving. Students are never deleted.
 
 **Placement.** One enrollment per student per session and at most one current

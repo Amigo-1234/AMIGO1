@@ -84,6 +84,9 @@ staff workspace, [`admin.md`](admin.md).
   components mirror automatically. Direction-bearing icons use `rtl:-scale-x-100`.
 - Data entry that is inherently Latin (student IDs, PINs, emails) stays `dir="ltr"`
   inside Arabic pages.
+- Free text people type (names, addresses, notes, reasons) uses the `user-text` utility
+  (`unicode-bidi: plaintext`) when shown and `dir="auto"` when typed, so Latin text inside
+  an Arabic page, or Arabic inside an English page, keeps its own reading order.
 - Numbers, Naira amounts and dates use `Intl` with `en-NG` and `ar-u-nu-latn` (Arabic
   text with Western digits, so IDs, scores and money read the same in both languages),
   in the `Africa/Lagos` time zone.

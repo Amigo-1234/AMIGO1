@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { isLocale } from "@/i18n/config";
+import { dictionaries } from "@/i18n/dictionaries";
 import { AdminForm, FieldGroup } from "@/components/admin/form";
 import { PageHeader } from "@/components/admin/page-parts";
 import { StudentDetailFields } from "@/components/admin/student-fields";
@@ -8,7 +10,12 @@ import { localizedPath } from "@/i18n/paths";
 import { updateStudentAction } from "@/server/admin/actions";
 import { loadStudentPage } from "@/server/admin/load";
 
-export const metadata: Metadata = { robots: { index: false } };
+export async function generateMetadata({
+  params,
+}: PageProps<"/[locale]/admin/students/[id]/edit">): Promise<Metadata> {
+  const { locale } = await params;
+  return isLocale(locale) ? { title: dictionaries[locale].admin.edit.title } : {};
+}
 
 export default async function EditStudentPage({
   params,

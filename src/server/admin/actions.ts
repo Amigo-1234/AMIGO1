@@ -88,9 +88,16 @@ export async function changeStatusAction(
     const studentId = requireId(values, "studentId");
     if (!studentId) return { error: "not_found" };
     const to = values.to;
-    if (!isStudentStatus(to)) return { error: "invalid", fieldErrors: { to: "required" } };
     const parsed = parseReason(values);
-    if (!parsed.ok) return { error: "invalid", fieldErrors: parsed.errors };
+    // Report every problem at once: the choice, the reason and the confirmation.
+    if (!isStudentStatus(to) || !parsed.ok)
+      return {
+        error: "invalid",
+        fieldErrors: {
+          ...(isStudentStatus(to) ? {} : { to: "required" as const }),
+          ...(parsed.ok ? {} : parsed.errors),
+        },
+      };
     await changeStudentStatus(db, actor, { studentId, to, reason: parsed.data.reason });
     return studentPath(studentId, "status_changed");
   });

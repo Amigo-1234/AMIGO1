@@ -27,8 +27,10 @@ export function formatDate(
   locale: Locale,
   style: Intl.DateTimeFormatOptions["dateStyle"] = "medium",
 ): string {
+  // Arabic "medium" dates are numeric (07/10/2026) and ambiguous; spell the month instead.
+  const dateStyle = locale === "ar" && style === "medium" ? "long" : style;
   return new Intl.DateTimeFormat(getIntlLocale(locale), {
-    dateStyle: style,
+    dateStyle,
     timeZone: "Africa/Lagos",
   }).format(date);
 }

@@ -5,7 +5,6 @@ import { AdminForm, FieldGroup, Input } from "@/components/admin/form";
 import { DoneNotice, EmptyState, PageHeader, Section } from "@/components/admin/page-parts";
 import { ChevronForwardIcon } from "@/components/icons";
 import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
 import { getDb } from "@/db/client";
 import { isLocale } from "@/i18n/config";
 import { dictionaries } from "@/i18n/dictionaries";
@@ -135,7 +134,7 @@ export default async function AcademicsPage({
 
         <Section title={a.levels}>
           <p className="mb-4 text-sm text-charcoal-700">{a.levelsBody}</p>
-          <Card className="overflow-x-auto shadow-none">
+          <div className="overflow-x-auto rounded-lg border border-stone-200">
             <table className="w-full min-w-[34rem] text-sm">
               <thead className="border-b border-stone-200 bg-sand-50 text-stone-600">
                 <tr>
@@ -184,7 +183,7 @@ export default async function AcademicsPage({
                 ))}
               </tbody>
             </table>
-          </Card>
+          </div>
         </Section>
       </div>
     </>

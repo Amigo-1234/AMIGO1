@@ -20,6 +20,7 @@ import {
   canBeEnrolled,
   canChangeStatus,
   endsActiveEnrollment,
+  reopensEnrollment,
   restoreTarget,
 } from "./student-lifecycle";
 
@@ -54,6 +55,10 @@ describe("student lifecycle", () => {
     expect(endsActiveEnrollment("suspended")).toBe(false);
     expect(canBeEnrolled("active")).toBe(true);
     expect(canBeEnrolled("suspended")).toBe(false);
+    expect(reopensEnrollment("withdrawn", "active")).toBe(true);
+    expect(reopensEnrollment("archived", "suspended")).toBe(true);
+    expect(reopensEnrollment("suspended", "active")).toBe(false);
+    expect(reopensEnrollment("archived", "graduated")).toBe(false);
   });
 });
 
@@ -90,6 +95,17 @@ describe("admin input", () => {
     expect(result).toEqual({
       ok: false,
       errors: { fullName: "required", dateOfBirth: "future", admittedOn: "invalid" },
+    });
+  });
+
+  it("says when a value is too short", () => {
+    expect(parseStudentDetails({ fullName: "A" }, today)).toEqual({
+      ok: false,
+      errors: { fullName: "too_short" },
+    });
+    expect(parseReason({ reason: "ok", confirm: "on" })).toEqual({
+      ok: false,
+      errors: { reason: "too_short" },
     });
   });
 

@@ -5,7 +5,8 @@
  * - Archiving keeps the record (rows are never deleted); restoring returns the student to
  *   the status they had before archiving.
  * - Leaving the school (withdrawn, archived) ends the active enrollment as `withdrawn`.
- *   Suspension is temporary, so the enrollment stays active.
+ *   Suspension is temporary, so the enrollment stays active. Coming back (readmission or
+ *   restore) reopens that enrollment if its session is still open.
  */
 export const STUDENT_STATUSES = [
   "active",
@@ -52,6 +53,15 @@ export function restoreTarget(statusBeforeArchive: string | null | undefined): S
 /** Whether moving to `to` ends the student's active enrollment (as `withdrawn`). */
 export function endsActiveEnrollment(to: StudentStatus): boolean {
   return to === "withdrawn" || to === "archived";
+}
+
+/**
+ * Whether returning to `to` from `from` reopens the class placement the student left. A
+ * student who leaves and comes back within the same session returns to their place in that
+ * session (one enrollment per student per session), provided the session is still open.
+ */
+export function reopensEnrollment(from: StudentStatus, to: StudentStatus): boolean {
+  return (from === "withdrawn" || from === "archived") && (to === "active" || to === "suspended");
 }
 
 /** Only students currently at school can be placed in a class. */

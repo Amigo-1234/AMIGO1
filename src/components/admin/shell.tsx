@@ -97,7 +97,7 @@ export function AdminShell({
   const nav = <AdminNavList items={items} soon={soon} soonLabel={n.later} soonTag={n.soon} />;
 
   return (
-    <div className="min-h-dvh lg:grid lg:grid-cols-[17rem_1fr]">
+    <div className="min-h-dvh lg:grid lg:grid-cols-[17rem_1fr] lg:bg-brand-950">
       <SkipLink label={t.common.skipToContent} />
       {/* Phones and tablets: top bar with a menu. */}
       <header className="relative z-20 flex items-center justify-between gap-3 bg-brand-950 px-4 py-2 lg:hidden">
@@ -119,7 +119,7 @@ export function AdminShell({
         </nav>
         {identity}
       </aside>
-      <main id="main" className="min-w-0 px-4 pt-6 pb-16 sm:px-6 lg:px-10 lg:pt-10">
+      <main id="main" className="min-w-0 bg-ivory px-4 pt-6 pb-16 sm:px-6 lg:px-10 lg:pt-10">
         <div className="mx-auto w-full max-w-5xl">{children}</div>
       </main>
     </div>

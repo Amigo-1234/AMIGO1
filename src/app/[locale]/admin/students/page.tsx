@@ -76,7 +76,7 @@ export default async function StudentsPage({
           method="get"
           action={base}
           role="search"
-          className="grid gap-3 md:grid-cols-[2fr_1fr_1fr_auto] md:items-end"
+          className="grid gap-3 md:grid-cols-[2fr_1fr_1fr_auto] md:items-start"
         >
           <div className="flex flex-col gap-1.5">
             <label htmlFor="q" className="text-sm font-semibold text-charcoal-900">
@@ -89,12 +89,15 @@ export default async function StudentsPage({
                 name="q"
                 type="search"
                 defaultValue={query.q ?? ""}
-                placeholder={s.searchHint}
+                aria-describedby="q-hint"
                 maxLength={80}
                 autoComplete="off"
                 className={cn(inputClasses, "ps-9")}
               />
             </div>
+            <p id="q-hint" className="text-sm text-stone-600">
+              {s.searchHint}
+            </p>
           </div>
           <div className="flex flex-col gap-1.5">
             <label htmlFor="status" className="text-sm font-semibold text-charcoal-900">
@@ -133,7 +136,8 @@ export default async function StudentsPage({
               ))}
             </select>
           </div>
-          <div className="flex gap-2">
+          {/* Offset by the label height so the buttons line up with the fields. */}
+          <div className="flex gap-2 md:mt-6.5">
             <button type="submit" className={buttonClasses()}>
               {s.apply}
             </button>
@@ -198,7 +202,7 @@ export default async function StudentsPage({
                         href={studentHref(row.id)}
                         className="font-semibold text-brand-900 hover:underline"
                       >
-                        {row.fullName}
+                        <span className="user-text">{row.fullName}</span>
                       </Link>
                     </td>
                     <td className="px-4 py-3 tabular-nums">
@@ -231,7 +235,7 @@ export default async function StudentsPage({
                 >
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-semibold text-brand-900">
-                      {row.fullName}
+                      <span className="user-text">{row.fullName}</span>
                     </span>
                     <span
                       dir="ltr"

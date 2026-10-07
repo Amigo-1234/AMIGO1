@@ -107,7 +107,7 @@ export function DetailList({
             dir={row.ltr ? "ltr" : undefined}
             className={cn(
               "mt-0.5 break-words whitespace-pre-line text-charcoal-900",
-              row.ltr && "text-start rtl:text-end",
+              row.ltr ? "text-start rtl:text-end" : "user-text",
             )}
           >
             {row.value ?? <span className="text-stone-500">{emptyLabel}</span>}
@@ -150,7 +150,7 @@ export function DoneNotice({ code, t }: { code: string | string[] | undefined; t
   );
 }
 
-/** A compact statistic. */
+/** A compact statistic. (Its own surface classes: `cn` never merges conflicting utilities.) */
 export function Stat({
   label,
   value,
@@ -162,26 +162,26 @@ export function Stat({
   hint?: ReactNode;
   tone?: "default" | "brand";
 }) {
+  const brand = tone === "brand";
   return (
-    <Card
-      className={cn("p-4 sm:p-5", tone === "brand" && "border-brand-800 bg-brand-900 text-ivory")}
+    <div
+      className={cn(
+        "rounded-lg border p-4 shadow-sm sm:p-5",
+        brand ? "border-brand-800 bg-brand-900 text-ivory" : "border-stone-200 bg-white",
+      )}
     >
-      <p className={cn("text-sm", tone === "brand" ? "text-brand-100" : "text-stone-600")}>
-        {label}
-      </p>
+      <p className={cn("text-sm", brand ? "text-brand-100" : "text-stone-600")}>{label}</p>
       <p
         className={cn(
           "mt-1 text-3xl font-semibold tabular-nums",
-          tone === "brand" ? "text-ivory" : "text-brand-950",
+          brand ? "text-ivory" : "text-brand-950",
         )}
       >
         {value}
       </p>
       {hint && (
-        <p className={cn("mt-1 text-sm", tone === "brand" ? "text-gold-200" : "text-charcoal-700")}>
-          {hint}
-        </p>
+        <p className={cn("mt-1 text-sm", brand ? "text-gold-200" : "text-charcoal-700")}>{hint}</p>
       )}
-    </Card>
+    </div>
   );
 }

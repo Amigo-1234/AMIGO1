@@ -8,6 +8,7 @@ import {
   canChangeStatus,
   endsActiveEnrollment,
   isStudentStatus,
+  reopensEnrollment,
   restoreTarget,
 } from "@/domain/student-lifecycle";
 import {
@@ -166,6 +167,9 @@ export async function changeStudentStatus(
         .where(eq(students.id, current.id));
 
       let endedEnrollmentId: string | null = null;
+      const reopenedEnrollmentId = reopensEnrollment(current.status, input.to)
+        ? await reopenLeftEnrollment(tx, current.id)
+        : null;
       if (endsActiveEnrollment(input.to)) {
         const [ended] = await tx
           .update(enrollments)
@@ -181,7 +185,13 @@ export async function changeStudentStatus(
         action: "student.status_changed",
         targetType: "student",
         targetId: current.id,
-        metadata: { from: current.status, to: input.to, reason: input.reason, endedEnrollmentId },
+        metadata: {
+          from: current.status,
+          to: input.to,
+          reason: input.reason,
+          endedEnrollmentId,
+          reopenedEnrollmentId,
+        },
       });
     },
     input.reason,
@@ -212,17 +222,53 @@ export async function restoreStudent(
         .update(students)
         .set({ status: target, archivedAt: null })
         .where(eq(students.id, current.id));
+      const reopenedEnrollmentId = reopensEnrollment("archived", target)
+        ? await reopenLeftEnrollment(tx, current.id)
+        : null;
       await recordAudit(tx, {
         actor: staffActor(actor),
         action: "student.status_changed",
         targetType: "student",
         targetId: current.id,
-        metadata: { from: "archived", to: target, reason: input.reason, restored: true },
+        metadata: {
+          from: "archived",
+          to: target,
+          reason: input.reason,
+          restored: true,
+          reopenedEnrollmentId,
+        },
       });
       return target;
     },
     input.reason,
   );
+}
+
+/**
+ * Reopen the placement a returning student left: their latest `withdrawn` enrollment, if
+ * its session still accepts students and they have no other current placement. The
+ * withdrawal itself stays in the audit log. Returns the reopened enrollment, if any.
+ */
+async function reopenLeftEnrollment(tx: DbExecutor, studentId: string): Promise<string | null> {
+  const rows = await tx
+    .select({
+      id: enrollments.id,
+      status: enrollments.status,
+      sessionStatus: academicSessions.status,
+    })
+    .from(enrollments)
+    .innerJoin(academicSessions, eq(academicSessions.id, enrollments.sessionId))
+    .where(eq(enrollments.studentId, studentId))
+    .orderBy(desc(academicSessions.startYear));
+  if (rows.some((row) => row.status === "active")) return null;
+  const latest = rows[0];
+  if (!latest || latest.status !== "withdrawn" || !sessionAcceptsEnrollment(latest.sessionStatus))
+    return null;
+  await tx
+    .update(enrollments)
+    .set({ status: "active", endedOn: null })
+    .where(eq(enrollments.id, latest.id));
+  return latest.id;
 }
 
 /** The status recorded by the most recent archiving of this student, if any. */

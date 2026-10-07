@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { isLocale } from "@/i18n/config";
+import { dictionaries } from "@/i18n/dictionaries";
 import { AdminForm, Checkbox, FieldGroup, Input, Select, TextArea } from "@/components/admin/form";
 import { PageHeader } from "@/components/admin/page-parts";
 import { Card } from "@/components/ui/card";
@@ -9,7 +11,12 @@ import { changeLevelAction, enrollStudentAction } from "@/server/admin/actions";
 import { loadStudentPage } from "@/server/admin/load";
 import { listLevels, sessionsAcceptingEnrollment } from "@/server/admin/queries";
 
-export const metadata: Metadata = { robots: { index: false } };
+export async function generateMetadata({
+  params,
+}: PageProps<"/[locale]/admin/students/[id]/placement">): Promise<Metadata> {
+  const { locale } = await params;
+  return isLocale(locale) ? { title: dictionaries[locale].admin.place.title } : {};
+}
 
 /**
  * Class placement: place a student who has no current class, or correct the level of the
