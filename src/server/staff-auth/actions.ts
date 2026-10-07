@@ -264,5 +264,5 @@ export async function updateOwnNameAction(
   } catch {
     return { error: "server", fullName };
   }
-  redirect(localizedPath(locale, "/admin?name=saved"));
+  redirect(localizedPath(locale, "/admin/account?name=saved"));
 }
