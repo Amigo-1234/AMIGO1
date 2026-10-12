@@ -143,7 +143,6 @@ export const en = {
     errorTitle: "This page could not be loaded",
     errorBody: "Please try again. If it keeps happening, contact the school office.",
     retry: "Try again",
-    loading: "Loading…",
   },
   admin: {
     title: "Staff area",

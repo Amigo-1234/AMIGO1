@@ -166,7 +166,10 @@ Planned (Phase 10): nonce-based Content-Security-Policy and further hardening.
    (the core of this was delivered in phase 4).
 6. **Results**: score entry, validation, grading, ranking, publication (delivered as
    phase 5, with the student portal's results view). See [`results.md`](results.md).
-7. **Student portal**: overview, results, fees, history, profile.
+7. **Student portal**: overview, results, fees, history, profile (delivered as phase 6 with
+   staff PIN management, except fees). Routes: `/portal` (overview), `/portal/results`,
+   `/portal/results/[sheetId]`, `/portal/profile`; every query is scoped to the student in the
+   verified session (`src/server/portal/queries.ts`).
 8. **Finance**: fees, payment ledger, receipts and statements.
 9. **Promotion**: individual and bulk promotion, graduation.
 10. **Operations**: audit log, settings, reports, security hardening, migration tooling.

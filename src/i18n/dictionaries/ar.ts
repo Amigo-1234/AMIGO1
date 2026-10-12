@@ -107,7 +107,7 @@ export const ar: Dictionary = {
       label: "بوابة الطالب",
       overview: "نظرة عامة",
       results: "النتائج",
-      profile: "الملف الشخصي",
+      profile: "ملفي",
     },
     currentClass: "الصف الحالي",
     notEnrolled: "لم تُسجَّل في صف في هذه السنة الدراسية.",
@@ -143,7 +143,6 @@ export const ar: Dictionary = {
     errorTitle: "تعذّر تحميل هذه الصفحة",
     errorBody: "يُرجى المحاولة مرة أخرى. وإذا تكرر ذلك فتواصل مع إدارة المدرسة.",
     retry: "إعادة المحاولة",
-    loading: "جارٍ التحميل…",
   },
   admin: {
     title: "منطقة الموظفين",

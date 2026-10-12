@@ -11,7 +11,7 @@ export function PortalNav({ items, label }: { items: PortalNavItem[]; label: str
   const pathname = usePathname();
   return (
     <nav aria-label={label} className="border-b border-stone-200 bg-white/80 print:hidden">
-      <ul className="mx-auto flex max-w-4xl gap-1 px-2 sm:px-4">
+      <ul className="mx-auto flex max-w-6xl gap-1 px-2 sm:px-4">
         {items.map((item) => {
           const current = item.exact
             ? pathname === item.href

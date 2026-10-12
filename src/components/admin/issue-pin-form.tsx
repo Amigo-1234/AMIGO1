@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useId } from "react";
+import { useRouter } from "next/navigation";
+import { useActionState, useEffect, useId } from "react";
 import { SubmitButton } from "@/components/auth/submit-button";
 import { Notice } from "@/components/ui/notice";
 import { type IssuePinState, issuePinAction } from "@/server/admin/credential-actions";
@@ -35,6 +36,11 @@ export function IssuePinForm({
 }) {
   const [state, action] = useActionState<IssuePinState, FormData>(issuePinAction, {});
   const id = useId();
+  const router = useRouter();
+  // Refresh the server-rendered access facts; this component (and the PIN) stays mounted.
+  useEffect(() => {
+    if (state.pin) router.refresh();
+  }, [state.pin, router]);
 
   if (state.pin)
     return (
