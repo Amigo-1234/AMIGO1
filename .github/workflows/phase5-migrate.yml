@@ -1,0 +1,72 @@
+# TEMPORARY: applies the Phase 5 migrations (0002 pass mark, 0003 grading policy details) to
+# the production database before the results code is deployed, then verifies it read-only.
+# Lives only on the ops/phase5-migrate branch, which is deleted after the run.
+#
+# The migrations are additive: a nullable column with a CHECK, a replaced trigger function
+# (same locks plus two one-way fills), and filling the standard policy's empty pass mark and
+# remarks. No academic or student data is touched. Secrets are masked and never printed.
+name: Temporary Phase 5 migration
+
+on:
+  push:
+    branches: [ops/phase5-migrate]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phase5-migrate
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Check secrets are present and mask their parts
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_URL_UNPOOLED: ${{ secrets.DATABASE_URL_UNPOOLED }}
+        run: |
+          node --input-type=module -e '
+            for (const key of ["DATABASE_URL", "DATABASE_URL_UNPOOLED"]) {
+              const value = process.env[key];
+              if (!value) { console.error(`${key} secret is not set.`); process.exit(1); }
+              let url;
+              try { url = new URL(value); } catch { console.error(`${key} is not a valid URL.`); process.exit(1); }
+              for (const part of [url.password, decodeURIComponent(url.password), url.username]) {
+                if (part) console.log(`::add-mask::${part}`);
+              }
+              console.log(`${key}: present`);
+            }
+          '
+
+      - name: Verify before (read-only; expected to report the two pending migrations)
+        continue-on-error: true
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_URL_UNPOOLED: ${{ secrets.DATABASE_URL_UNPOOLED }}
+        run: npm run db:verify
+
+      - name: Apply migrations (db:migrate)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_URL_UNPOOLED: ${{ secrets.DATABASE_URL_UNPOOLED }}
+        run: npm run db:migrate
+
+      - name: Verify after (read-only)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_URL_UNPOOLED: ${{ secrets.DATABASE_URL_UNPOOLED }}
+        run: npm run db:verify
