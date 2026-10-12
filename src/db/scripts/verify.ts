@@ -262,8 +262,12 @@ async function verifySeed(client: PoolClient) {
     max_score: number;
     ca_max: number;
     exam_max: number;
+    pass_mark: number | null;
+    remark_en: string | null;
+    remark_ar: string | null;
   }>(
-    `SELECT b.grade, b.min_score, b.max_score, p.ca_max, p.exam_max
+    `SELECT b.grade, b.min_score, b.max_score, p.ca_max, p.exam_max, p.pass_mark,
+            b.remark_en, b.remark_ar
      FROM grading_policies p JOIN grade_bands b ON b.policy_id = p.id
      WHERE p.is_default ORDER BY b.min_score DESC`,
   );
@@ -278,6 +282,16 @@ async function verifySeed(client: PoolClient) {
         b.exam_max === DEFAULT_GRADING_POLICY.examMax,
     );
   report(bandsMatch, "Seed: default grading policy (CA 40 / Exam 60, A–F)");
+  report(
+    bands.length > 0 &&
+      bands.every(
+        (b, i) =>
+          b.pass_mark === DEFAULT_GRADING_POLICY.passMark &&
+          b.remark_en === DEFAULT_GRADING_POLICY.bands[i]?.remarkEn &&
+          b.remark_ar === DEFAULT_GRADING_POLICY.bands[i]?.remarkAr,
+      ),
+    "Seed: default policy pass mark and grade remarks",
+  );
 
   report(
     (await count(client, "SELECT count(*) AS n FROM permissions WHERE key = ANY($1)", [

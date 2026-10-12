@@ -1,17 +1,26 @@
 /**
  * Grading policy rules. The defaults reproduce V1 exactly:
  * CA out of 40, exam out of 60 (total 100); A 70–100, B 60–69, C 50–59, D 45–49,
- * E 40–44, F 0–39.
+ * E 40–44, F 0–39. The pass mark (50) and the remark wording were decided by the school
+ * for V2 (Phase 5); V1 had neither.
  *
  * Policies are stored in the database (grading_policies, grade_bands) so thresholds can
  * change in future sessions without code changes; each session points at one policy.
  */
-export type GradeBand = { grade: string; minScore: number; maxScore: number };
+export type GradeBand = {
+  grade: string;
+  minScore: number;
+  maxScore: number;
+  remarkEn?: string | null;
+  remarkAr?: string | null;
+};
 
 export type GradingPolicyDefinition = {
   name: string;
   caMax: number;
   examMax: number;
+  /** Lowest passing total; null when the policy defines no pass mark. */
+  passMark: number | null;
   bands: GradeBand[];
 };
 
@@ -19,13 +28,14 @@ export const DEFAULT_GRADING_POLICY: GradingPolicyDefinition = {
   name: "Standard (CA 40 / Exam 60)",
   caMax: 40,
   examMax: 60,
+  passMark: 50,
   bands: [
-    { grade: "A", minScore: 70, maxScore: 100 },
-    { grade: "B", minScore: 60, maxScore: 69 },
-    { grade: "C", minScore: 50, maxScore: 59 },
-    { grade: "D", minScore: 45, maxScore: 49 },
-    { grade: "E", minScore: 40, maxScore: 44 },
-    { grade: "F", minScore: 0, maxScore: 39 },
+    { grade: "A", minScore: 70, maxScore: 100, remarkEn: "Excellent", remarkAr: "ممتاز" },
+    { grade: "B", minScore: 60, maxScore: 69, remarkEn: "Very good", remarkAr: "جيد جدًا" },
+    { grade: "C", minScore: 50, maxScore: 59, remarkEn: "Good", remarkAr: "جيد" },
+    { grade: "D", minScore: 45, maxScore: 49, remarkEn: "Fair", remarkAr: "مقبول" },
+    { grade: "E", minScore: 40, maxScore: 44, remarkEn: "Weak", remarkAr: "ضعيف" },
+    { grade: "F", minScore: 0, maxScore: 39, remarkEn: "Fail", remarkAr: "راسب" },
   ],
 };
 
@@ -44,6 +54,11 @@ export function validateGradingPolicy(policy: GradingPolicyDefinition): string[]
     problems.push("Exam maximum must be a positive whole number");
   if (policy.caMax + policy.examMax !== 100)
     problems.push("CA and exam maximums must add up to 100");
+  if (
+    policy.passMark !== null &&
+    (!isWhole(policy.passMark) || policy.passMark < 0 || policy.passMark > 100)
+  )
+    problems.push("Pass mark must be a whole number from 0 to 100");
 
   const grades = policy.bands.map((b) => b.grade);
   if (new Set(grades).size !== grades.length) problems.push("Grade letters must be unique");

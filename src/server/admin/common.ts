@@ -42,7 +42,19 @@ export type AdminErrorCode =
   | "term_not_active"
   | "dates_outside_session"
   | "guardian_already_linked"
-  | "guardian_not_linked";
+  | "guardian_not_linked"
+  // Results
+  | "term_not_open"
+  | "legacy_term"
+  | "subject_not_in_level"
+  | "enrollment_not_in_class"
+  | "sheet_finalized"
+  | "sheet_not_finalized"
+  | "score_out_of_range"
+  | "score_conflict"
+  | "nothing_to_save"
+  | "publication_incomplete"
+  | "reason_required";
 
 export function requirePermissions(actor: StaffAccess, ...permissions: Permission[]): void {
   for (const permission of permissions) assertPermission(actor, permission);

@@ -1,0 +1,2 @@
+ALTER TABLE "grading_policies" ADD COLUMN "pass_mark" smallint;--> statement-breakpoint
+ALTER TABLE "grading_policies" ADD CONSTRAINT "grading_policies_pass_mark" CHECK (pass_mark IS NULL OR pass_mark BETWEEN 0 AND 100);

@@ -259,6 +259,7 @@ describe("editing and lifecycle", () => {
   });
 
   it("suspends without ending the enrollment, and ends it as withdrawn when the student leaves", async () => {
+    const nextYear = new Date().getUTCFullYear() + 1;
     const session = await newSession();
     const { id } = await registerStudent(db, registrar, await intake(session.id));
     await db.insert(studentSessions).values({
@@ -284,10 +285,12 @@ describe("editing and lifecycle", () => {
       studentId: id,
       to: "withdrawn",
       reason: "Moved to another city",
-      now: new Date("2026-10-06T23:30:00Z"),
+      // 23:30 UTC is already the next day in Lagos. A year ahead, so it never precedes
+      // the enrollment's start (today).
+      now: new Date(`${nextYear}-10-06T23:30:00Z`),
     });
     [enrollment] = await db.select().from(enrollments).where(eq(enrollments.studentId, id));
-    expect(enrollment).toMatchObject({ status: "withdrawn", endedOn: "2026-10-07" });
+    expect(enrollment).toMatchObject({ status: "withdrawn", endedOn: `${nextYear}-10-07` });
 
     await expect(
       changeStudentStatus(db, registrar, { studentId: id, to: "graduated", reason: "Not by hand" }),

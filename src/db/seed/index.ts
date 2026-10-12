@@ -130,6 +130,7 @@ export async function seedDatabase(db: DbExecutor): Promise<SeedSummary> {
           name: DEFAULT_GRADING_POLICY.name,
           caMax: DEFAULT_GRADING_POLICY.caMax,
           examMax: DEFAULT_GRADING_POLICY.examMax,
+          passMark: DEFAULT_GRADING_POLICY.passMark,
           isDefault: !anyDefault,
         })
         .returning({ id: gradingPolicies.id });

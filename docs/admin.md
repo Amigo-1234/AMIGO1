@@ -21,6 +21,8 @@ permission is missing, but hiding is never the check.
 | `/admin/academics/sessions/[sessionId]`       | Session dates, activation/closing, terms                       | view as above; changes `sessions.manage`       |
 | `/admin/account`                              | Own name, roles and permissions                                | any active staff                               |
 
+Results screens and their audit events are described in [`results.md`](results.md).
+
 Activity on a profile is shown to staff with `audit.read`.
 
 ## How a change happens
@@ -96,5 +98,5 @@ of promotion), and closes its current term. Term dates must fall inside the sess
 
 ## Not in this phase
 
-Issuing or resetting student PINs, promotion and graduation, results, fees, reports,
+Issuing or resetting student PINs, promotion and graduation, fees, reports,
 staff management screens, level/subject editing and a full audit-log viewer.

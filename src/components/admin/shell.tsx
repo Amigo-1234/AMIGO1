@@ -59,13 +59,18 @@ export function AdminShell({
       label: n.academics,
       icon: <CalendarIcon className="size-5" />,
     });
+  if (hasPermission(access, "results.read"))
+    items.push({
+      href: href("/admin/results"),
+      label: n.results,
+      icon: <ResultsIcon className="size-5" />,
+    });
   items.push({
     href: href("/admin/account"),
     label: n.account,
     icon: <UserIcon className="size-5" />,
   });
   const soon = [
-    { label: n.results, icon: <ResultsIcon className="size-5" /> },
     { label: n.finance, icon: <WalletIcon className="size-5" /> },
     { label: n.reports, icon: <ReportIcon className="size-5" /> },
   ];
@@ -97,10 +102,10 @@ export function AdminShell({
   const nav = <AdminNavList items={items} soon={soon} soonLabel={n.later} soonTag={n.soon} />;
 
   return (
-    <div className="min-h-dvh lg:grid lg:grid-cols-[17rem_1fr] lg:bg-brand-950">
+    <div className="min-h-dvh lg:grid lg:grid-cols-[17rem_1fr] lg:bg-brand-950 print:block print:bg-white">
       <SkipLink label={t.common.skipToContent} />
       {/* Phones and tablets: top bar with a menu. */}
-      <header className="relative z-20 flex items-center justify-between gap-3 bg-brand-950 px-4 py-2 lg:hidden">
+      <header className="relative z-20 flex items-center justify-between gap-3 bg-brand-950 px-4 py-2 lg:hidden print:hidden">
         <Link href={href("/admin")} className="focus-ring-on-dark rounded-md py-1">
           <BrandLockup locale={locale} tone="light" />
         </Link>
@@ -110,7 +115,7 @@ export function AdminShell({
         </MobileMenu>
       </header>
       {/* Large screens: persistent sidebar. */}
-      <aside className="sticky top-0 hidden h-dvh flex-col gap-8 overflow-y-auto bg-brand-950 px-4 py-6 lg:flex">
+      <aside className="sticky top-0 hidden h-dvh flex-col gap-8 overflow-y-auto bg-brand-950 px-4 py-6 lg:flex print:hidden">
         <Link href={href("/admin")} className="focus-ring-on-dark rounded-md px-2">
           <BrandLockup locale={locale} tone="light" />
         </Link>
@@ -119,8 +124,11 @@ export function AdminShell({
         </nav>
         {identity}
       </aside>
-      <main id="main" className="min-w-0 bg-ivory px-4 pt-6 pb-16 sm:px-6 lg:px-10 lg:pt-10">
-        <div className="mx-auto w-full max-w-5xl">{children}</div>
+      <main
+        id="main"
+        className="min-w-0 bg-ivory px-4 pt-6 pb-16 sm:px-6 lg:px-10 lg:pt-10 print:bg-white print:p-0"
+      >
+        <div className="mx-auto w-full max-w-5xl print:max-w-none">{children}</div>
       </main>
     </div>
   );

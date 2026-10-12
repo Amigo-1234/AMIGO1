@@ -130,6 +130,8 @@
  */
 @utility user-text {
   unicode-bidi: plaintext;
+  /* Align with the surrounding layout, not with the text's own direction. */
+  text-align: match-parent;
 }
 @utility focus-ring-on-dark {
   &:focus-visible {
@@ -148,8 +150,15 @@
   }
 }
 
+@page {
+  size: A4;
+  margin: 14mm;
+}
+
 @media print {
   body {
     background: var(--color-white);
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
   }
 }

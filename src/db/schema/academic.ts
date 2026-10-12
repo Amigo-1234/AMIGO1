@@ -88,6 +88,12 @@ export const gradingPolicies = pgTable(
     caMax: smallint().notNull().default(40),
     examMax: smallint().notNull().default(60),
     isDefault: boolean().notNull().default(false),
+    /**
+     * Lowest total (out of 100) that passes, for a subject and for the term average.
+     * Null means the policy defines no pass mark. Once the policy is locked it can be set
+     * once but never changed (database trigger), so verdicts never shift.
+     */
+    passMark: smallint(),
     /** Once set, maxima and bands can no longer change (database trigger). */
     lockedAt: timestamptz(),
     createdById: uuid().references((): AnyPgColumn => staffUsers.id, { onDelete: "restrict" }),
@@ -96,6 +102,7 @@ export const gradingPolicies = pgTable(
   },
   (t) => [
     check("grading_policies_maxima", sql`ca_max > 0 AND exam_max > 0 AND ca_max + exam_max = 100`),
+    check("grading_policies_pass_mark", sql`pass_mark IS NULL OR pass_mark BETWEEN 0 AND 100`),
     uniqueIndex("grading_policies_single_default")
       .on(t.isDefault)
       .where(sql`is_default`),
