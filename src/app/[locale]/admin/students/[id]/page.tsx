@@ -19,6 +19,7 @@ import { formatDate, formatDay, formatNumber, interpolate } from "@/i18n/format"
 import { localizedPath } from "@/i18n/paths";
 import { getDictionary } from "@/i18n/server";
 import { getStudentProfile, studentActivity } from "@/server/admin/queries";
+import { readStudentSheets } from "@/server/results/read";
 import { hasPermission } from "@/server/staff-auth/access";
 import { requireStaffPermission } from "@/server/staff-auth/current";
 import { canSignIn } from "@/server/student-auth/rules";
@@ -47,6 +48,8 @@ function activityDetail(entry: Activity, t: Dictionary): string | null {
     return `${String(m.session ?? "")} · ${String(m.level ?? "")}`;
   if (entry.action === "student.created" && typeof m.publicId === "string") return m.publicId;
   if (entry.action === "guardian.unlinked" && m.reason) return String(m.reason);
+  if (entry.action === "result.sheet_reopened")
+    return `${String(m.session ?? "")} · ${String(m.term ?? "")}${m.reason ? ` · ${String(m.reason)}` : ""}`;
   return null;
 }
 
@@ -70,6 +73,7 @@ export default async function StudentProfilePage({
     hasPermission(access, permission);
   const base = localizedPath(locale, `/admin/students/${student.id}`);
   const activity = can("audit.read") ? await studentActivity(db, student.id) : null;
+  const sheets = can("results.read") ? await readStudentSheets(db, access, student.id) : null;
   const levelName = (row: { levelNameEn: string; levelNameAr: string }) =>
     locale === "ar" ? row.levelNameAr : row.levelNameEn;
   const day = (value: string | null) => formatDay(value, locale);
@@ -264,6 +268,45 @@ export default async function StudentProfilePage({
               <p className="text-charcoal-700">{p.noGuardians}</p>
             )}
           </Section>
+
+          {sheets && (
+            <Section title={p.results} id="results">
+              {sheets.length ? (
+                <ul className="divide-y divide-stone-200">
+                  {sheets.map((sheet) => (
+                    <li key={sheet.sheetId}>
+                      <Link
+                        href={`${base}/results/${sheet.sheetId}`}
+                        className="flex min-h-14 flex-wrap items-center justify-between gap-2 py-3 hover:bg-sand-50"
+                      >
+                        <span className="min-w-0">
+                          <span className="block font-semibold text-charcoal-900">
+                            <span dir="ltr">{sheet.sessionLabel}</span> ·{" "}
+                            {locale === "ar" ? sheet.termNameAr : sheet.termNameEn}
+                          </span>
+                          <span className="block text-sm text-stone-600">
+                            {levelName(sheet)}
+                            {sheet.summary.average !== null &&
+                              ` · ${t.sheet.average} ${formatNumber(sheet.summary.average, locale)}`}
+                          </span>
+                        </span>
+                        <span className="flex flex-wrap gap-2">
+                          <Badge tone={sheet.status === "finalized" ? "success" : "warning"}>
+                            {sheet.status === "finalized" ? t.sheet.finalized : t.sheet.draft}
+                          </Badge>
+                          {sheet.status === "finalized" && sheet.published && (
+                            <Badge tone="accent">{t.sheet.visibleToStudent}</Badge>
+                          )}
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-charcoal-700">{p.noResults}</p>
+              )}
+            </Section>
+          )}
         </div>
 
         <div className="flex min-w-0 flex-col gap-4">
