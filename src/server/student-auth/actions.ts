@@ -67,7 +67,14 @@ export async function studentSignInAction(
 }
 
 export type SetPinState = {
-  error?: "invalid_pin" | "weak_pin" | "mismatch" | "session_invalid" | "not_configured" | "server";
+  error?:
+    | "invalid_pin"
+    | "weak_pin"
+    | "same_pin"
+    | "mismatch"
+    | "session_invalid"
+    | "not_configured"
+    | "server";
 };
 
 export async function setNewPinAction(

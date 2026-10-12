@@ -1,4 +1,4 @@
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import { normalizeStudentIdInput } from "@/domain/student-id";
 import { studentCredentials, studentIdentifiers, students, systemSettings } from "@/db/schema";
 import type { DbExecutor } from "@/db/types";
@@ -102,14 +102,16 @@ export async function signInStudent(
     .set({ lastUsedAt: input.now })
     .where(eq(studentCredentials.id, candidate.credentialId));
 
+  // A V1 password, or a PIN staff issued, must be replaced by the student's own PIN.
+  const mustSetPin = kind === "legacy_v1_password" || candidate.issuedByStaff;
   const session = await createStudentSession(db, {
     studentId: candidate.studentId,
-    mustSetPin: kind === "legacy_v1_password",
+    mustSetPin,
     now: input.now,
     ipHash: input.ipAddress ? keyedHash(input.authSecret, "ip", input.ipAddress) : null,
     userAgent: input.userAgent,
   });
-  return { status: "ok", ...session, mustSetPin: kind === "legacy_v1_password" };
+  return { status: "ok", ...session, mustSetPin };
 }
 
 /** Resolve any registered ID (primary or alias) to the student's live credential of a kind. */
@@ -120,6 +122,7 @@ async function findCredential(db: DbExecutor, normalizedId: string, kind: Secret
       studentStatus: students.status,
       credentialId: studentCredentials.id,
       secretHash: studentCredentials.secretHash,
+      issuedByStaff: sql<boolean>`${studentCredentials.createdById} IS NOT NULL`,
     })
     .from(studentIdentifiers)
     .innerJoin(students, eq(students.id, studentIdentifiers.studentId))
@@ -141,13 +144,15 @@ export type PinChangeResult =
   | { status: "invalid_pin" }
   /** Six digits, but too predictable (see isWeakPin). */
   | { status: "weak_pin" }
+  /** The same PIN staff issued: it must be one only the student knows. */
+  | { status: "same_pin" }
   | { status: "mismatch" };
 
 /**
- * Replace a migrated V1 password with a new 6-digit PIN. Only allowed from the short
- * session created by a legacy sign-in. In one transaction: store the new PIN hash, revoke
- * the legacy credential (it can never be used again), end every session of the student,
- * open a normal session and audit the migration.
+ * Replace a migrated V1 password, or a PIN issued by staff, with the student's own 6-digit
+ * PIN. Only allowed from the short session created by such a sign-in. In one transaction:
+ * store the new PIN hash, revoke the old credentials (they can never be used again), end
+ * every session of the student, open a normal session and audit the change.
  */
 export async function completeLegacyPinMigration(
   db: DbExecutor,
@@ -164,6 +169,18 @@ export async function completeLegacyPinMigration(
   if (!isValidPin(input.newPin)) return { status: "invalid_pin" };
   if (isWeakPin(input.newPin)) return { status: "weak_pin" };
   if (input.newPin !== input.confirmPin) return { status: "mismatch" };
+  const [issued] = await db
+    .select({ secretHash: studentCredentials.secretHash })
+    .from(studentCredentials)
+    .where(
+      and(
+        eq(studentCredentials.studentId, session.student.id),
+        eq(studentCredentials.kind, "pin"),
+        isNull(studentCredentials.revokedAt),
+      ),
+    );
+  if (issued && (await verifyCredential(issued.secretHash, input.newPin, input.authSecret)))
+    return { status: "same_pin" };
 
   const secretHash = await hashCredential(input.newPin, input.authSecret);
   const studentId = session.student.id;
@@ -179,7 +196,7 @@ export async function completeLegacyPinMigration(
           isNull(studentCredentials.revokedAt),
         ),
       );
-    await tx
+    const migrated = await tx
       .update(studentCredentials)
       .set({ revokedAt: input.now, revokedReason: "migrated_to_pin" })
       .where(
@@ -188,7 +205,8 @@ export async function completeLegacyPinMigration(
           eq(studentCredentials.kind, "legacy_v1_password"),
           isNull(studentCredentials.revokedAt),
         ),
-      );
+      )
+      .returning({ id: studentCredentials.id });
     await tx
       .insert(studentCredentials)
       .values({ studentId, kind: "pin", secretHash, createdAt: input.now });
@@ -196,10 +214,10 @@ export async function completeLegacyPinMigration(
     const next = await createStudentSession(tx, { studentId, mustSetPin: false, now: input.now });
     await recordAudit(tx, {
       actor: { type: "student", studentId, label: session.student.publicId },
-      action: "student.pin_migrated",
+      action: migrated.length ? "student.pin_migrated" : "student.pin_chosen",
       targetType: "student",
       targetId: studentId,
-      metadata: { from: "legacy_v1_password", to: "pin" },
+      metadata: { from: migrated.length ? "legacy_v1_password" : "issued_pin", to: "pin" },
     });
     return { status: "ok" as const, ...next };
   });

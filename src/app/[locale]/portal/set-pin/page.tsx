@@ -34,6 +34,7 @@ export default async function SetPinPage() {
           errors: {
             invalid_pin: s.invalidPin,
             weak_pin: s.weakPin,
+            same_pin: s.samePin,
             mismatch: s.mismatch,
             session_invalid: s.sessionInvalid,
             not_configured: t.auth.notConfigured,

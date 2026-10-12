@@ -117,17 +117,19 @@ export async function revokeStudentSession(
     .where(and(eq(studentSessions.tokenHash, sha256Hex(token)), isNull(studentSessions.revokedAt)));
 }
 
-/** Revoke every live session of a student, optionally keeping one. */
+/** Revoke every live session of a student, optionally keeping one. Returns how many. */
 export async function revokeAllStudentSessions(
   db: DbExecutor,
   studentId: string,
   now: Date,
   exceptSessionId?: string,
-): Promise<void> {
+): Promise<number> {
   const conditions = [eq(studentSessions.studentId, studentId), isNull(studentSessions.revokedAt)];
   if (exceptSessionId) conditions.push(ne(studentSessions.id, exceptSessionId));
-  await db
+  const ended = await db
     .update(studentSessions)
     .set({ revokedAt: now })
-    .where(and(...conditions));
+    .where(and(...conditions))
+    .returning({ id: studentSessions.id });
+  return ended.length;
 }

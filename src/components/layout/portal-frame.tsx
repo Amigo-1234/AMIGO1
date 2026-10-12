@@ -2,21 +2,21 @@ import type { ReactNode } from "react";
 import { SignOutForm } from "@/components/auth/sign-out-form";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SkipLink } from "@/components/layout/skip-link";
+import { localizedPath } from "@/i18n/paths";
+import { PortalNav } from "./portal-nav";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
 import { studentSignOutAction } from "@/server/student-auth/actions";
 
-/** The signed-in student's page frame: site header with sign-out, and a narrow column. */
+/** The signed-in student's page frame: site header with sign-out, section tabs, a column. */
 export function PortalFrame({
   locale,
   t,
   children,
-  wide = false,
 }: {
   locale: Locale;
   t: Dictionary;
   children: ReactNode;
-  wide?: boolean;
 }) {
   return (
     <div className="flex min-h-dvh flex-col print:block">
@@ -35,9 +35,17 @@ export function PortalFrame({
           }
         />
       </div>
+      <PortalNav
+        label={t.portal.nav.label}
+        items={[
+          { href: localizedPath(locale, "/portal"), label: t.portal.nav.overview, exact: true },
+          { href: localizedPath(locale, "/portal/results"), label: t.portal.nav.results },
+          { href: localizedPath(locale, "/portal/profile"), label: t.portal.nav.profile },
+        ]}
+      />
       <main
         id="main"
-        className={`mx-auto w-full flex-1 px-4 py-8 sm:px-6 sm:py-10 print:max-w-none print:p-0 ${wide ? "max-w-4xl" : "max-w-3xl"}`}
+        className="mx-auto w-full max-w-4xl flex-1 px-4 py-8 sm:px-6 sm:py-10 print:max-w-none print:p-0"
       >
         {children}
       </main>

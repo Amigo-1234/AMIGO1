@@ -8,6 +8,7 @@ import {
   ilike,
   inArray,
   isNull,
+  max,
   or,
   sql,
   type SQL,
@@ -368,6 +369,7 @@ export async function getStudentProfile(db: DbExecutor, studentId: string, now =
       kind: studentCredentials.kind,
       createdAt: studentCredentials.createdAt,
       lastUsedAt: studentCredentials.lastUsedAt,
+      issuedByStaff: sql<boolean>`${studentCredentials.createdById} IS NOT NULL`,
     })
     .from(studentCredentials)
     .where(and(eq(studentCredentials.studentId, student.id), isNull(studentCredentials.revokedAt)));
@@ -382,6 +384,11 @@ export async function getStudentProfile(db: DbExecutor, studentId: string, now =
       ),
     );
 
+  const [{ lastSignIn }] = await db
+    .select({ lastSignIn: max(studentSessions.createdAt) })
+    .from(studentSessions)
+    .where(eq(studentSessions.studentId, student.id));
+
   return {
     student,
     identifiers,
@@ -392,6 +399,7 @@ export async function getStudentProfile(db: DbExecutor, studentId: string, now =
       pin: credentials.find((c) => c.kind === "pin") ?? null,
       legacy: credentials.find((c) => c.kind === "legacy_v1_password") ?? null,
       openSessions,
+      lastSignIn,
     },
   };
 }
