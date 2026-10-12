@@ -174,6 +174,24 @@ For migrated families only (imported in a later phase):
 5. Setting the flag to `false` disables all legacy sign-ins immediately; remaining legacy
    credentials can later be revoked in bulk.
 
+### Staff-issued PINs and revocation (Phase 6)
+
+Staff with `student_credentials.reset` manage a student's access at
+`/<locale>/admin/students/[id]/access` (`src/server/admin/credentials.ts`):
+
+- **Issue / reset**: the server generates a uniformly random 6-digit PIN that passes the
+  weak-PIN rule, stores only its argon2id hash (with `created_by_id` = the staff member),
+  revokes every live credential (PIN and V1 password) and ends every session, all in one
+  transaction. The plain PIN is returned in the action response only and shown once; it is
+  never stored, logged, audited or put in a URL. Only active or graduated students qualify.
+- **One-time PIN**: a PIN with `created_by_id` set was issued by staff. Signing in with it
+  opens the short "choose your own PIN" session (the same flow as V1 passwords); the new PIN
+  must differ from the issued one, so staff never know the PIN the student goes on to use.
+- **Revoke**: needs a reason and confirmation; revokes every live credential and ends every
+  session. A new PIN must be issued before the student can sign in again.
+
+No migration was needed: the existing `created_by_id` column marks staff-issued PINs.
+
 ## Request security
 
 - **CSRF**: every state change (sign-in, sign-out, PIN change, setup) is a Server Action.
@@ -193,13 +211,16 @@ For migrated families only (imported in a later phase):
 
 ## Audit events
 
-| Action                                      | When                              |
-| ------------------------------------------- | --------------------------------- |
-| `staff.bootstrapped`                        | First Super Admin created         |
-| `staff.enabled` / `staff.disabled`          | Staff status changed              |
-| `staff.role_granted` / `staff.role_revoked` | Role assignment changed           |
-| `staff.name_changed`                        | Staff corrected own display name  |
-| `student.pin_migrated`                      | Legacy password replaced by a PIN |
+| Action                                      | When                                                 |
+| ------------------------------------------- | ---------------------------------------------------- |
+| `staff.bootstrapped`                        | First Super Admin created                            |
+| `staff.enabled` / `staff.disabled`          | Staff status changed                                 |
+| `staff.role_granted` / `staff.role_revoked` | Role assignment changed                              |
+| `staff.name_changed`                        | Staff corrected own display name                     |
+| `student.pin_migrated`                      | Legacy password replaced by a PIN                    |
+| `student.pin_issued` / `student.pin_reset`  | Staff issued or reset a PIN (no PIN in metadata)     |
+| `student.pin_chosen`                        | Student replaced a staff-issued PIN with their own   |
+| `student.access_revoked`                    | Staff revoked portal access (reason, sessions ended) |
 
 Student, guardian, enrollment, session and term events are listed in
 [`admin.md`](admin.md#audit-events-added). Result events are listed in [`results.md`](results.md#audit-events).

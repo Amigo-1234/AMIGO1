@@ -54,7 +54,10 @@ export type AdminErrorCode =
   | "score_conflict"
   | "nothing_to_save"
   | "publication_incomplete"
-  | "reason_required";
+  | "reason_required"
+  // Student credentials
+  | "cannot_sign_in"
+  | "no_access_to_revoke";
 
 export function requirePermissions(actor: StaffAccess, ...permissions: Permission[]): void {
   for (const permission of permissions) assertPermission(actor, permission);

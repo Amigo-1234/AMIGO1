@@ -729,7 +729,12 @@ describe("read models", () => {
       expiresAt: new Date(Date.now() + 3_600_000),
     });
     const profile = await getStudentProfile(db, id);
-    expect(profile?.signIn).toEqual({ pin: null, legacy: null, openSessions: 1 });
+    expect(profile?.signIn).toEqual({
+      pin: null,
+      legacy: null,
+      openSessions: 1,
+      lastSignIn: expect.any(Date),
+    });
     const json = JSON.stringify(profile);
     expect(json).not.toContain("b".repeat(64));
     expect(json).not.toMatch(/secretHash|tokenHash|\$argon2/);

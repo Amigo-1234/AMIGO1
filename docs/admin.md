@@ -19,6 +19,7 @@ permission is missing, but hiding is never the check.
 | `/admin/students/[id]/guardians/[guardianId]` | Edit a guardian, or remove them from this student              | `students.update`                              |
 | `/admin/academics`                            | Sessions, new session, levels                                  | `students.read` or `sessions.manage`           |
 | `/admin/academics/sessions/[sessionId]`       | Session dates, activation/closing, terms                       | view as above; changes `sessions.manage`       |
+| `/admin/students/[id]/access`                 | Issue, reset or revoke the student's portal PIN                | `student_credentials.reset`                    |
 | `/admin/account`                              | Own name, roles and permissions                                | any active staff                               |
 
 Results screens and their audit events are described in [`results.md`](results.md).
@@ -98,5 +99,5 @@ of promotion), and closes its current term. Term dates must fall inside the sess
 
 ## Not in this phase
 
-Issuing or resetting student PINs, promotion and graduation, fees, reports,
+Promotion and graduation, fees, reports,
 staff management screens, level/subject editing and a full audit-log viewer.

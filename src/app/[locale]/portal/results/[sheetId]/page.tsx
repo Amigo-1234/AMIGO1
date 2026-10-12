@@ -38,7 +38,7 @@ export default async function PortalResultPage({
   if (!sheet) notFound();
 
   return (
-    <PortalFrame locale={locale} t={t} wide>
+    <PortalFrame locale={locale} t={t}>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3 print:hidden">
         <Link
           href={localizedPath(locale, "/portal")}

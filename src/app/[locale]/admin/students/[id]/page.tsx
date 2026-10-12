@@ -48,6 +48,7 @@ function activityDetail(entry: Activity, t: Dictionary): string | null {
     return `${String(m.session ?? "")} · ${String(m.level ?? "")}`;
   if (entry.action === "student.created" && typeof m.publicId === "string") return m.publicId;
   if (entry.action === "guardian.unlinked" && m.reason) return String(m.reason);
+  if (entry.action === "student.access_revoked" && m.reason) return String(m.reason);
   if (entry.action === "result.sheet_reopened")
     return `${String(m.session ?? "")} · ${String(m.term ?? "")}${m.reason ? ` · ${String(m.reason)}` : ""}`;
   return null;
@@ -328,7 +329,17 @@ export default async function StudentProfilePage({
             </ul>
           </Section>
 
-          <Section title={p.signIn} id="sign-in">
+          <Section
+            title={p.signIn}
+            id="sign-in"
+            actions={
+              can("student_credentials.reset") && !archived ? (
+                <ButtonLink href={`${base}/access`} variant="secondary">
+                  {t.admin.access.manage}
+                </ButtonLink>
+              ) : undefined
+            }
+          >
             <ul className="flex flex-col gap-2 text-sm text-charcoal-700">
               {!canSignIn(student.status) && (
                 <li className="text-warning-700">
@@ -346,11 +357,19 @@ export default async function StudentProfilePage({
                         date: formatDate(profile.signIn.pin.lastUsedAt, locale),
                       })
                     : p.pinNeverUsed}
+                  {profile.signIn.pin.issuedByStaff && <> · {t.admin.access.waitingChange}</>}
                 </li>
               ) : (
                 <li>{p.noPin}</li>
               )}
               {profile.signIn.legacy && <li>{p.legacyActive}</li>}
+              <li>
+                {profile.signIn.lastSignIn
+                  ? interpolate(t.admin.access.lastSignIn, {
+                      date: formatDate(profile.signIn.lastSignIn, locale),
+                    })
+                  : t.admin.access.neverSignedIn}
+              </li>
               {profile.signIn.openSessions > 0 && (
                 <li>
                   {interpolate(p.openSessions, {
