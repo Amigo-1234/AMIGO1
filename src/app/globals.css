@@ -130,6 +130,8 @@
  */
 @utility user-text {
   unicode-bidi: plaintext;
+  /* Align with the surrounding layout, not with the text's own direction. */
+  text-align: match-parent;
 }
 @utility focus-ring-on-dark {
   &:focus-visible {

@@ -134,10 +134,10 @@ export function ResultSheet({
               <span className="font-semibold text-charcoal-900">
                 {ar ? subject.nameAr : subject.nameEn}
               </span>
-              <span className="text-lg font-semibold text-brand-950 tabular-nums">
+              <span className="inline-flex items-baseline gap-2 text-lg font-semibold text-brand-950 tabular-nums">
                 {outcome.total === null ? blank : num(outcome.total)}
                 {outcome.band && (
-                  <span className="ms-2 text-base text-gold-700">{outcome.band.grade}</span>
+                  <span className="text-base text-gold-700">{outcome.band.grade}</span>
                 )}
               </span>
             </div>
@@ -162,10 +162,16 @@ export function ResultSheet({
               {s.subject}
             </th>
             <th scope="col" className="px-2 py-2 text-end font-semibold">
-              {s.ca} <span className="font-normal">/{num(sheet.policy.caMax)}</span>
+              {s.ca}{" "}
+              <span dir="ltr" className="inline-block font-normal">
+                /{num(sheet.policy.caMax)}
+              </span>
             </th>
             <th scope="col" className="px-2 py-2 text-end font-semibold">
-              {s.exam} <span className="font-normal">/{num(sheet.policy.examMax)}</span>
+              {s.exam}{" "}
+              <span dir="ltr" className="inline-block font-normal">
+                /{num(sheet.policy.examMax)}
+              </span>
             </th>
             <th scope="col" className="px-2 py-2 text-end font-semibold">
               {s.total}
@@ -232,11 +238,16 @@ export function ResultSheet({
           {sheet.policy.bands
             .slice()
             .sort((a, b) => b.minScore - a.minScore)
-            .map(
-              (b) =>
-                `${b.grade} ${num(b.minScore)}–${num(b.maxScore)}${(ar ? b.remarkAr : b.remarkEn) ? ` ${ar ? b.remarkAr : b.remarkEn}` : ""}`,
-            )
-            .join(" · ")}
+            .map((b, i) => (
+              <span key={b.grade} className="inline-block">
+                {i > 0 && <span className="mx-1">·</span>}
+                {b.grade}{" "}
+                <span dir="ltr" className="inline-block">
+                  {num(b.minScore)}–{num(b.maxScore)}
+                </span>
+                {(ar ? b.remarkAr : b.remarkEn) && <> {ar ? b.remarkAr : b.remarkEn}</>}
+              </span>
+            ))}
         </p>
       </footer>
     </article>

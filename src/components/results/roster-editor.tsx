@@ -114,15 +114,16 @@ export function RosterEditor({
     const max = field === "ca" ? caMax : examMax;
     if (parsed === "invalid" || (parsed !== null && parsed > max))
       return fill(strings.max, { max });
+    // Field-level problems from the server; row-level ones (conflicts) mark the row instead.
     if (result && !result.ok)
-      if (
-        result.problems?.some(
-          (p) => p.enrollmentId === enrollmentId && (p.field === field || p.field === "row"),
-        )
-      )
+      if (result.problems?.some((p) => p.enrollmentId === enrollmentId && p.field === field))
         return strings.errors[result.error] ?? strings.errors.server;
     return null;
   };
+  const rowProblem = (enrollmentId: string) =>
+    !!result &&
+    !result.ok &&
+    !!result.problems?.some((p) => p.enrollmentId === enrollmentId && p.field === "row");
   const hasLocalErrors = dirty.some(
     (r) => problemFor(r.enrollmentId, "ca") || problemFor(r.enrollmentId, "exam"),
   );
@@ -210,11 +211,15 @@ export function RosterEditor({
               </th>
               <th scope="col" className="w-20 px-1 py-2.5 text-center font-semibold sm:w-24">
                 {strings.ca}
-                <span className="block text-xs font-normal">/{caMax}</span>
+                <span dir="ltr" className="block text-xs font-normal">
+                  /{caMax}
+                </span>
               </th>
               <th scope="col" className="w-20 px-1 py-2.5 text-center font-semibold sm:w-24">
                 {strings.exam}
-                <span className="block text-xs font-normal">/{examMax}</span>
+                <span dir="ltr" className="block text-xs font-normal">
+                  /{examMax}
+                </span>
               </th>
               <th scope="col" className="w-16 px-2 py-2.5 text-end font-semibold">
                 {strings.total}
@@ -238,7 +243,13 @@ export function RosterEditor({
               return (
                 <tr
                   key={row.enrollmentId}
-                  className={cn(changed && "bg-warning-50", locked && "bg-stone-100/60")}
+                  className={cn(
+                    rowProblem(row.enrollmentId)
+                      ? "bg-danger-50"
+                      : changed
+                        ? "bg-warning-50"
+                        : locked && "bg-stone-100/60",
+                  )}
                 >
                   <th scope="row" className="px-3 py-2 text-start font-normal">
                     <span className="user-text block font-semibold text-charcoal-900">
@@ -298,8 +309,10 @@ export function RosterEditor({
                     );
                   })}
                   <td className="px-2 py-2 text-end font-semibold tabular-nums">
-                    {total ?? "—"}
-                    {grade && <span className="ms-1 text-gold-700">{grade}</span>}
+                    <span className="inline-flex items-baseline gap-1">
+                      {total ?? "—"}
+                      {grade && <span className="text-gold-700">{grade}</span>}
+                    </span>
                   </td>
                 </tr>
               );

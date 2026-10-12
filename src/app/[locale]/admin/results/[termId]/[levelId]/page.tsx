@@ -192,10 +192,10 @@ export default async function ClassResultsPage({
                               {o.total === null ? (
                                 <span className="font-normal text-danger-700">—</span>
                               ) : (
-                                <>
+                                <span className="inline-flex items-baseline gap-1">
                                   {num(o.total)}
-                                  <span className="ms-1 text-gold-700">{o.band?.grade}</span>
-                                </>
+                                  <span className="text-gold-700">{o.band?.grade}</span>
+                                </span>
                               )}
                             </dd>
                           </div>
@@ -225,17 +225,16 @@ export default async function ClassResultsPage({
               <table className="w-full text-sm">
                 <thead className="border-b border-stone-200 bg-sand-50 text-stone-600">
                   <tr>
-                    <th scope="col" className="px-3 py-2.5 text-start font-semibold">
+                    <th scope="col" className="min-w-40 px-3 py-2.5 text-start font-semibold">
                       {r.student}
                     </th>
                     {scope.curriculum.map((subject) => (
                       <th
                         key={subject.id}
                         scope="col"
-                        title={subjectName(subject)}
-                        className="px-2 py-2.5 text-center font-semibold"
+                        className="px-1.5 py-2.5 text-center text-xs font-semibold"
                       >
-                        <span dir="ltr">{subject.code}</span>
+                        {subjectName(subject)}
                       </th>
                     ))}
                     <th scope="col" className="px-2 py-2.5 text-end font-semibold">
@@ -278,7 +277,7 @@ export default async function ClassResultsPage({
                           <td
                             key={scope.curriculum[i].id}
                             className={cn(
-                              "px-2 py-2 text-center tabular-nums",
+                              "px-1.5 py-2 text-center whitespace-nowrap tabular-nums",
                               o.total === null && "bg-danger-50",
                             )}
                           >
@@ -291,10 +290,10 @@ export default async function ClassResultsPage({
                                 —
                               </span>
                             ) : (
-                              <>
+                              <span className="inline-flex items-baseline gap-1">
                                 <span className="font-semibold">{num(o.total)}</span>
-                                <span className="ms-1 text-gold-700">{o.band?.grade}</span>
-                              </>
+                                <span className="text-gold-700">{o.band?.grade}</span>
+                              </span>
                             )}
                           </td>
                         ))}
@@ -437,6 +436,7 @@ export default async function ClassResultsPage({
                     maxLength={500}
                     rows={2}
                   />
+                  <Checkbox name="confirm" label={t.admin.common.confirm} />
                 </AdminForm>
               )}
             </Section>

@@ -558,7 +558,7 @@ export const en = {
       student: "Student",
       sheet: "Sheet",
       missing: "Missing scores",
-      missingItem: "{name}: {count} subjects not complete",
+      missingItem: "{name} · incomplete subjects: {count}",
       nothingMissing: "Every enrolled student has every score.",
       finalize: "Finalize results",
       finalizeBody:
@@ -583,11 +583,11 @@ export const en = {
       entryTitle: "{subject} · {level}",
       entryBody:
         "CA out of {ca}, exam out of {exam}. Leave a box blank when a score is not available.",
-      unsaved: "{count} unsaved changes",
+      unsaved: "Unsaved changes: {count}",
       allSaved: "All changes saved",
       saveScores: "Save scores",
       savingScores: "Saving…",
-      savedCount: "{count} scores saved.",
+      savedCount: "Scores saved: {count}.",
       noChanges: "No changes to save.",
       reload: "Reload latest",
       conflictNames: "Changed by someone else: {names}. Reload to see their changes.",
