@@ -1,0 +1,32 @@
+# TEMPORARY, read-only: checks that production serves the Phase 5 routes. Uses no secrets,
+# only anonymous GET requests (no sign-in, no writes). Removed right after the run.
+name: Temporary Phase 5 route probe
+
+on:
+  push:
+    branches: [ops/phase5-migrate]
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Probe production routes
+        run: |
+          base=https://www.markazulginna.com.ng
+          for p in /en /ar /en/staff/login /en/portal/login \
+                   /en/admin/results /ar/admin/results \
+                   /en/admin/results/00000000-0000-4000-8000-000000000000/00000000-0000-4000-8000-000000000000 \
+                   /en/admin/students/00000000-0000-4000-8000-000000000000/results/00000000-0000-4000-8000-000000000000 \
+                   /en/portal /en/portal/results/00000000-0000-4000-8000-000000000000 \
+                   /ar/portal/results/00000000-0000-4000-8000-000000000000 \
+                   /en/this-route-does-not-exist; do
+            curl -s -o /dev/null -w "%{http_code} $p -> %{redirect_url}\n" "$base$p"
+          done
+          echo "--- headers"
+          curl -sI "$base/en" | grep -iE '^(x-vercel-id|x-matched-path|server|age):' || true
+          echo "--- portal login page mentions"
+          curl -s "$base/en/portal/login" | grep -o '<title>[^<]*</title>'
