@@ -97,6 +97,12 @@ Each session references one policy. When a session using a policy leaves `planne
 policy is locked by trigger: its maximums and bands can no longer change, so historical
 grades never shift. Future changes are new policies.
 
+Each policy has an optional `pass_mark` (0–100) and each band optional English and Arabic
+remarks (migration `0002`, `0003`). On a locked policy the trigger allows exactly two one-way
+fills, so policies already in use could receive the school's Phase 5 decisions: setting a
+NULL `pass_mark` once, and filling NULL band remarks. Changing or clearing them is refused. The
+standard policy gets pass mark 50 and the standard remarks; see [`results.md`](results.md).
+
 ### Fees and payments
 
 - `fee_structures` define the standard fee; `fee_charges` record what each enrollment owes

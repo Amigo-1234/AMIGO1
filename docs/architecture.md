@@ -164,7 +164,8 @@ Planned (Phase 10): nonce-based Content-Security-Policy and further hardening.
    profiles, lifecycle, guardians, sessions, terms and enrolments. See [`admin.md`](admin.md).
 5. **Admin experience**: admin shell, dashboard, registration and student management
    (the core of this was delivered in phase 4).
-6. **Results**: score entry, validation, grading, ranking, publication.
+6. **Results**: score entry, validation, grading, ranking, publication (delivered as
+   phase 5, with the student portal's results view). See [`results.md`](results.md).
 7. **Student portal**: overview, results, fees, history, profile.
 8. **Finance**: fees, payment ledger, receipts and statements.
 9. **Promotion**: individual and bulk promotion, graduation.
