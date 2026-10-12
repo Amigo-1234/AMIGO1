@@ -148,8 +148,15 @@
   }
 }
 
+@page {
+  size: A4;
+  margin: 14mm;
+}
+
 @media print {
   body {
     background: var(--color-white);
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
   }
 }
